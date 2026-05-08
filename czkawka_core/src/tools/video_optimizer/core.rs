@@ -379,11 +379,27 @@ impl VideoOptimizer {
                     unreachable!("VideoTranscode mode should have VideoTranscode fix_params(caller is responsible for that)");
                 };
 
+                let min_width = video_transcode_params.hardware_encoder.min_width();
                 let transcode_warnings: Vec<_> = mem::take(&mut self.video_transcode_result_entries)
                     .into_par_iter()
                     .map(|entry| {
                         if check_if_stop_received(stop_flag) {
                             return None;
+                        }
+
+                        // Hardware encoders have minimum resolution requirements
+                        // (e.g. NVENC H.264 needs ≥145 px width).  Skip files that
+                        // are too small — they would fail at the encode stage.
+                        if let Some(mw) = min_width
+                            && (entry.width < mw || entry.height < mw)
+                        {
+                            return Some(Some(flc!(
+                                "core_video_too_small_for_encoder",
+                                file = entry.path.to_string_lossy(),
+                                width = entry.width,
+                                height = entry.height,
+                                minimum = mw
+                            )));
                         }
 
                         match process_video(stop_flag, &entry.path.to_string_lossy(), entry.size, &video_transcode_params) {

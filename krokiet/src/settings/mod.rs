@@ -387,6 +387,16 @@ pub(crate) fn set_combobox_custom_settings_items(settings: &Settings, custom_set
         .unwrap_or(0);
     settings.set_video_optimizer_sub_hardware_encoder_index(hw_idx as i32);
     settings.set_video_optimizer_sub_hardware_encoder_value(hw_encoder_display_names[hw_idx].into());
+
+    // Video Optimizer hardware decoder (separate from encoder for multi-GPU)
+    let hw_dec_config_names = ["none", "nvenc", "vaapi", "qsv", "videotoolbox", "amf"];
+    let hw_dec_display_names = ["Auto", "NVENC", "VAAPI", "QSV", "VideoToolbox", "AMF"];
+    let hw_dec_idx = hw_dec_config_names
+        .iter()
+        .position(|&s| s == custom_settings.video_optimizer_hardware_decoder.to_lowercase().as_str())
+        .unwrap_or(0);
+    settings.set_video_optimizer_sub_hardware_decoder_index(hw_dec_idx as i32);
+    settings.set_video_optimizer_sub_hardware_decoder_value(hw_dec_display_names[hw_dec_idx].into());
 }
 
 pub(crate) fn set_settings_to_gui(app: &MainWindow, custom_settings: &SettingsCustom, base_settings: &BasicSettings, cli_args: Option<CliResult>) {
@@ -707,6 +717,11 @@ pub(crate) fn collect_settings(app: &MainWindow) -> SettingsCustom {
         .unwrap_or(&"none")
         .to_string();
 
+    let video_optimizer_hardware_decoder = hw_encoder_config_names
+        .get(settings.get_video_optimizer_sub_hardware_decoder_index() as usize)
+        .unwrap_or(&"none")
+        .to_string();
+
     let ignored_exif_tags = settings.get_ignored_exif_tags().to_string();
     let temporary_files_extensions = settings.get_temporary_files_sub_extensions().to_string();
 
@@ -816,6 +831,7 @@ pub(crate) fn collect_settings(app: &MainWindow) -> SettingsCustom {
         video_optimizer_use_custom_command,
         video_optimizer_custom_command,
         video_optimizer_hardware_encoder,
+        video_optimizer_hardware_decoder,
         ignored_exif_tags,
         temporary_files_extensions,
         column_sizes,

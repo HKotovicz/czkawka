@@ -60,6 +60,22 @@ export component PopupReencodeVideo inherits Rectangle {
 
                     HorizontalLayout {
                         spacing: 5px;
+                        Text { text: Translations.subsettings_video_optimizer_hardware_decoder_text; vertical_alignment: TextVerticalAlignment.center; }
+                        ComboBox {
+                            model <=> Settings.video_optimizer_sub_hardware_decoder_config;
+                            current_index <=> Settings.video_optimizer_sub_hardware_decoder_index;
+                            current_value <=> Settings.video_optimizer_sub_hardware_decoder_value;
+                            enabled: !Settings.video_optimizer_sub_use_custom_command;
+                        }
+                    }
+                    Text {
+                        text: Translations.subsettings_video_optimizer_hardware_decoder_hint_text;
+                        font-size: FontSizes.small;
+                        color: ColorPalette.hint_color;
+                    }
+
+                    HorizontalLayout {
+                        spacing: 5px;
                         Text { text: Translations.subsettings_video_optimizer_video_quality_text; vertical_alignment: TextVerticalAlignment.center; }
                         Slider { minimum: 0.0; maximum: 51.0; value <=> Settings.popup_reencode_video_quality; }
                         Text {

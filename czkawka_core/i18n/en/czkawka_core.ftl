@@ -96,6 +96,7 @@ core_properly_saved_cache_entries = Properly saved to file { $count } cache entr
 core_video_processing_stopped_by_user = Video processing was stopped by user
 core_thumbnail_generation_stopped_by_user = Thumbnail generation was stopped by user
 core_failed_to_optimize_video = Failed to optimize video "{ $file }": { $reason }
+core_video_too_small_for_encoder = Skipped "{ $file }" ({ $width }×{ $height }): hardware encoder requires at least { $minimum } px per side. Use a software codec or a larger source file.
 core_failed_to_crop_video = Failed to crop video "{ $file }": { $reason }
 core_failed_to_get_metadata_of_optimized_file = Failed to get metadata of optimized file "{ $file }": { $reason }
 core_cannot_create_config_folder = Cannot create config folder "{ $folder }", reason { $reason }

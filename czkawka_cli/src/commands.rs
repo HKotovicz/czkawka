@@ -11,7 +11,7 @@ use czkawka_core::re_exported::{Cropdetect, FilterType, HashAlg};
 use czkawka_core::tools::broken_files::CheckedTypes;
 use czkawka_core::tools::same_music::MusicSimilarity;
 use czkawka_core::tools::similar_videos::{ALLOWED_SKIP_FORWARD_AMOUNT, ALLOWED_VID_HASH_DURATION, DEFAULT_SKIP_FORWARD_AMOUNT, crop_detect_from_str_opt};
-use czkawka_core::tools::video_optimizer::{NoiseReductionMethod, VideoCodec};
+use czkawka_core::tools::video_optimizer::{HardwareEncoder, NoiseReductionMethod, VideoCodec};
 
 #[cfg(not(feature = "no_colors"))]
 pub const CLAP_STYLING: Styles = Styles::styled()
@@ -687,6 +687,22 @@ pub struct TranscodeArgs {
     pub noise_reduction_strength: u32,
     #[clap(
         long,
+        default_value = "none",
+        value_parser = parse_hardware_encoder,
+        help = "Hardware encoder (none, nvenc, vaapi, qsv, videotoolbox, amf)",
+        long_help = "Hardware encoder to use for transcoding. 'none' uses software encoding. Only used with -F flag."
+    )]
+    pub hardware_encoder: HardwareEncoder,
+    #[clap(
+        long,
+        default_value = "none",
+        value_parser = parse_hardware_encoder,
+        help = "Hardware decoder (none, nvenc, vaapi, qsv, videotoolbox, amf)",
+        long_help = "Hardware-accelerated decoder to use. 'none' means use the same as --hardware-encoder. Set to a different encoder to decode on one GPU and encode on another (e.g. --hardware-decoder=nvenc --hardware-encoder=amf for CUDA decode + AMF AV1 encode)."
+    )]
+    pub hardware_decoder: HardwareEncoder,
+    #[clap(
+        long,
         help = "Custom ffmpeg command",
         long_help = "Custom ffmpeg command-line arguments to pass to ffmpeg during transcoding. When set, most other encoding options are ignored."
     )]
@@ -1160,6 +1176,18 @@ fn parse_video_codec(src: &str) -> Result<VideoCodec, &'static str> {
         "av1" => Ok(VideoCodec::Av1),
         "vp9" => Ok(VideoCodec::Vp9),
         _ => Err("Couldn't parse the video codec (allowed: h264, h265, av1, vp9)"),
+    }
+}
+
+fn parse_hardware_encoder(src: &str) -> Result<HardwareEncoder, &'static str> {
+    match src.to_ascii_lowercase().as_str() {
+        "none" => Ok(HardwareEncoder::None),
+        "nvenc" => Ok(HardwareEncoder::Nvenc),
+        "vaapi" => Ok(HardwareEncoder::Vaapi),
+        "qsv" => Ok(HardwareEncoder::Qsv),
+        "videotoolbox" => Ok(HardwareEncoder::VideoToolbox),
+        "amf" => Ok(HardwareEncoder::Amf),
+        _ => Err("Couldn't parse the hardware encoder (allowed: none, nvenc, vaapi, qsv, videotoolbox, amf)"),
     }
 }
 

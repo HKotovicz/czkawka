@@ -103,12 +103,35 @@ fn run_standard_command(params: &VideoTranscodeFixParams, video_path: &str, temp
         );
     }
 
+    // The user may request a different GPU for decoding vs encoding.
+    // Example: CUDA decode on an NVIDIA RTX 3060 (which does not support AV1
+    // encode) + AMF encode on an AMD iGPU (which does support AV1 encode).
+    let decode_hw = if params.hardware_decoder != HardwareEncoder::None { params.hardware_decoder } else { hw };
+    let cross_gpu = params.hardware_decoder != HardwareEncoder::None && params.hardware_decoder != hw;
+
     // VAAPI requires the render device to be declared before the input file.
-    let using_vaapi = hw == HardwareEncoder::Vaapi && hw_encoder_name.is_some();
+    // Check both encoder and decoder since either may be VAAPI.
+    let using_vaapi = hw == HardwareEncoder::Vaapi && hw_encoder_name.is_some() || decode_hw == HardwareEncoder::Vaapi;
     if using_vaapi {
         let device = find_vaapi_device().ok_or_else(|| "No VAAPI render device found in /dev/dri/".to_string())?;
         command.arg("-vaapi_device").arg(device);
     }
+
+    // Enable hardware-accelerated decoding.  This works even when encoding
+    // with a software codec (e.g. CUDA decode + libsvtav1 encode on CPU).
+    if decode_hw != HardwareEncoder::None
+        && let Some(hwaccel) = decode_hw.hwaccel_method()
+    {
+        command.arg("-hwaccel").arg(hwaccel);
+        if let Some(fmt) = decode_hw.hwaccel_output_format() {
+            command.arg("-hwaccel_output_format").arg(fmt);
+        }
+    }
+
+    // Be lenient with slightly damaged input files: regenerate missing
+    // timestamps and don't abort on minor bitstream corruption.
+    command.arg("-fflags").arg("+genpts");
+    command.arg("-err_detect").arg("ignore_err");
 
     command.arg("-i").arg(video_path).arg("-nostdin");
 
@@ -120,6 +143,12 @@ fn run_standard_command(params: &VideoTranscodeFixParams, video_path: &str, temp
     }
 
     let mut filters: Vec<String> = Vec::new();
+    // When decode and encode use different GPUs, frames must be downloaded
+    // from the decoder's GPU memory to system RAM so the encoder can pick
+    // them up (e.g. CUDA decode → hwdownload → AMF encode).
+    if cross_gpu {
+        filters.push("hwdownload,format=nv12".to_string());
+    }
     if params.limit_video_size {
         filters.push(format!(
             "scale='min({},iw):min({},ih):force_original_aspect_ratio=decrease'",
@@ -141,7 +170,11 @@ fn run_standard_command(params: &VideoTranscodeFixParams, video_path: &str, temp
         command.arg("-vf").arg(filters.join(","));
     }
 
-    command.arg("-c:a").arg("copy").arg("-y").arg(temp_output);
+    // Re-encode audio to AAC rather than copying.  `-c:a copy` fails when
+    // the source has a codec MP4 cannot hold (WMA, Opus, Vorbis, FLAC, …).
+    // AAC at 128 kbit/s is transparent for stereo content and guarantees
+    // the output is playable everywhere.
+    command.arg("-c:a").arg("aac").arg("-b:a").arg("128k").arg("-y").arg(temp_output);
 
     let codec_label = hw_encoder_name.unwrap_or_else(|| params.codec.as_ffprobe_codec_name());
     run_ffmpeg_command(command, video_path, codec_label, stop_flag, temp_output)

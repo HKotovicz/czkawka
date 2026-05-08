@@ -28,7 +28,7 @@ use czkawka_core::tools::similar_images::{SimilarImages, SimilarImagesParameters
 use czkawka_core::tools::similar_videos::{SimilarVideos, SimilarVideosParameters};
 use czkawka_core::tools::temporary::{Temporary, TemporaryParameters};
 use czkawka_core::tools::video_optimizer::{
-    HardwareEncoder, VideoCropFixParams, VideoCropParams, VideoCroppingMechanism, VideoOptimizer, VideoOptimizerFixParams, VideoOptimizerParameters, VideoTranscodeFixParams,
+    VideoCropFixParams, VideoCropParams, VideoCroppingMechanism, VideoOptimizer, VideoOptimizerFixParams, VideoOptimizerParameters, VideoTranscodeFixParams,
     VideoTranscodeParams,
 };
 use log::{debug, error, info};
@@ -453,6 +453,8 @@ fn video_optimizer(video_optimizer: VideoOptimizerArgs, stop_flag: &Arc<AtomicBo
                 thumbnail_grid_tiles_per_side,
                 noise_reduction,
                 noise_reduction_strength,
+                hardware_encoder,
+                hardware_decoder,
                 custom_ffmpeg_command,
             } = transcode_args;
 
@@ -485,7 +487,8 @@ fn video_optimizer(video_optimizer: VideoOptimizerArgs, stop_flag: &Arc<AtomicBo
                     noise_reduction,
                     noise_reduction_strength,
                     custom_ffmpeg_command,
-                    hardware_encoder: HardwareEncoder::None, // TODO  - missing hardware encoder
+                    hardware_encoder,
+                    hardware_decoder,
                 });
                 tool.fix_items(stop_flag, Some(progress_sender), fix_params);
             }

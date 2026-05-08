@@ -212,6 +212,8 @@ pub struct SettingsCustom {
     pub video_optimizer_custom_command: String,
     #[serde(default = "default_video_optimizer_hardware_encoder")]
     pub video_optimizer_hardware_encoder: String,
+    #[serde(default = "default_video_optimizer_hardware_decoder")]
+    pub video_optimizer_hardware_decoder: String,
     #[serde(default = "default_ignored_exif_tags")]
     pub ignored_exif_tags: String,
     #[serde(default = "default_temporary_files_extensions")]
@@ -509,5 +511,8 @@ pub(crate) fn default_temporary_files_extensions() -> String {
     DEFAULT_TEMP_EXTENSIONS_STR.to_string()
 }
 pub(crate) fn default_video_optimizer_hardware_encoder() -> String {
+    "none".to_string()
+}
+pub(crate) fn default_video_optimizer_hardware_decoder() -> String {
     "none".to_string()
 }

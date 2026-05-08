@@ -80,6 +80,11 @@ pub(crate) fn connect_optimize_video(app: &MainWindow, progress_sender: Sender<P
             .to_lowercase()
             .parse::<HardwareEncoder>()
             .unwrap_or_default();
+        let hardware_decoder = settings
+            .get_video_optimizer_sub_hardware_decoder_value()
+            .to_lowercase()
+            .parse::<HardwareEncoder>()
+            .unwrap_or_default();
 
         let processor = ModelProcessor::new(active_tab);
 
@@ -89,6 +94,7 @@ pub(crate) fn connect_optimize_video(app: &MainWindow, progress_sender: Sender<P
             stop_flag,
             codec,
             hardware_encoder,
+            hardware_decoder,
             fail_if_bigger,
             overwrite_files,
             video_quality,
@@ -149,6 +155,7 @@ impl ModelProcessor {
         stop_flag: Arc<AtomicBool>,
         requested_video_codec: VideoCodec,
         hardware_encoder: HardwareEncoder,
+        hardware_decoder: HardwareEncoder,
         fail_if_bigger: bool,
         overwrite_files: bool,
         video_quality: f32,
@@ -187,6 +194,7 @@ impl ModelProcessor {
                     &VideoTranscodeFixParams {
                         codec: requested_video_codec,
                         hardware_encoder,
+                        hardware_decoder,
                         quality: target_quality,
                         fail_if_not_smaller: fail_if_bigger,
                         overwrite_original: overwrite_files,

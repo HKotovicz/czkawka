@@ -185,6 +185,11 @@ export global Settings {
     in-out property <int>      video_optimizer_sub_hardware_encoder_index: 0;
     in-out property <string>   video_optimizer_sub_hardware_encoder_value: "none";
 
+    // Video hardware decoder (separate from encoder for multi-GPU setups)
+    in-out property <[string]> video_optimizer_sub_hardware_decoder_config: ["Auto", "NVENC", "VAAPI", "QSV", "VideoToolbox", "AMF"];
+    in-out property <int>      video_optimizer_sub_hardware_decoder_index: 0;
+    in-out property <string>   video_optimizer_sub_hardware_decoder_value: "none";
+
     // Custom FFmpeg command
     in-out property <bool>   video_optimizer_sub_use_custom_command: false;
     in-out property <string> video_optimizer_sub_custom_command: "";

@@ -1,6 +1,8 @@
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
+use log::debug;
+
 use crate::common::process_utils::disable_windows_console_window;
 use crate::tools::video_optimizer::{HardwareEncoder, VideoCodec};
 
@@ -46,13 +48,14 @@ fn test_hardware_encoder(encoder: HardwareEncoder) -> bool {
 fn test_encoder_simple(encoder_name: &str) -> bool {
     let mut cmd = Command::new("ffmpeg");
     disable_windows_console_window(&mut cmd);
+    // Use 320×240 instead of 64×64: NVENC H.264 requires a minimum width of 145 px.
     let Ok(mut child) = cmd
         .args([
             "-nostdin",
             "-f",
             "lavfi",
             "-i",
-            "color=size=64x64:rate=1",
+            "color=size=320x240:rate=1",
             "-frames:v",
             "1",
             "-c:v",
@@ -65,9 +68,14 @@ fn test_encoder_simple(encoder_name: &str) -> bool {
         .stderr(Stdio::null())
         .spawn()
     else {
+        debug!("Failed to spawn ffmpeg for encoder probe '{encoder_name}'");
         return false;
     };
-    wait_with_timeout(&mut child)
+    let ok = wait_with_timeout(&mut child);
+    if !ok {
+        debug!("Hardware encoder '{encoder_name}' probe failed (timeout or non-zero exit)");
+    }
+    ok
 }
 
 const ENCODER_PROBE_TIMEOUT: Duration = Duration::from_secs(5);
@@ -116,7 +124,7 @@ fn test_vaapi_encoder(encoder_name: &str) -> bool {
                 "-f",
                 "lavfi",
                 "-i",
-                "color=size=128x128:rate=1",
+                "color=size=320x240:rate=1",
                 "-vf",
                 "format=nv12,hwupload",
                 "-frames:v",

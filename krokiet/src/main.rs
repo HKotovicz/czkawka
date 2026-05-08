@@ -222,7 +222,8 @@ pub(crate) fn print_available_hw_accelerations() {
 /// default hardcoded list is kept.
 fn update_available_hardware_encoders(app: &MainWindow) {
     let settings = app.global::<Settings>();
-    let current_value = settings.get_video_optimizer_sub_hardware_encoder_value().to_string();
+    let current_encoder_value = settings.get_video_optimizer_sub_hardware_encoder_value().to_string();
+    let current_decoder_value = settings.get_video_optimizer_sub_hardware_decoder_value().to_string();
 
     let app_weak = app.as_weak();
     std::thread::spawn(move || {
@@ -240,14 +241,32 @@ fn update_available_hardware_encoders(app: &MainWindow) {
         let _ = slint::invoke_from_event_loop(move || {
             let Some(app) = app_weak.upgrade() else { return };
             let settings = app.global::<Settings>();
-            let current_encoder = current_value.to_lowercase().parse::<HardwareEncoder>().unwrap_or_default();
+            let current_encoder = current_encoder_value.to_lowercase().parse::<HardwareEncoder>().unwrap_or_default();
+            let current_decoder = current_decoder_value.to_lowercase().parse::<HardwareEncoder>().unwrap_or_default();
 
-            let all_encoders: Vec<HardwareEncoder> = std::iter::once(HardwareEncoder::None).chain(working).collect();
-            let new_index = all_encoders.iter().position(|&e| e == current_encoder).unwrap_or(0) as i32;
-            let config: Vec<slint::SharedString> = all_encoders.iter().map(|e| slint::SharedString::from(e.as_display_name())).collect();
+            let all_encoders: Vec<HardwareEncoder> = std::iter::once(HardwareEncoder::None).chain(working.clone()).collect();
+            let enc_new_idx = all_encoders.iter().position(|&e| e == current_encoder).unwrap_or(0) as i32;
+            let enc_config: Vec<slint::SharedString> = all_encoders.iter().map(|e| slint::SharedString::from(e.as_display_name())).collect();
 
-            settings.set_video_optimizer_sub_hardware_encoder_config(Rc::new(VecModel::from(config)).into());
-            settings.set_video_optimizer_sub_hardware_encoder_index(new_index);
+            settings.set_video_optimizer_sub_hardware_encoder_config(Rc::new(VecModel::from(enc_config)).into());
+            settings.set_video_optimizer_sub_hardware_encoder_index(enc_new_idx);
+
+            // Hardware decoder: "Auto" means use same as encoder; then list working encoders.
+            let all_decoders: Vec<HardwareEncoder> = std::iter::once(HardwareEncoder::None).chain(working).collect();
+            let dec_new_idx = all_decoders.iter().position(|&e| e == current_decoder).unwrap_or(0) as i32;
+            let dec_config: Vec<slint::SharedString> = all_decoders
+                .iter()
+                .map(|&e| {
+                    if e == HardwareEncoder::None {
+                        slint::SharedString::from("Auto")
+                    } else {
+                        slint::SharedString::from(e.as_display_name())
+                    }
+                })
+                .collect();
+
+            settings.set_video_optimizer_sub_hardware_decoder_config(Rc::new(VecModel::from(dec_config)).into());
+            settings.set_video_optimizer_sub_hardware_decoder_index(dec_new_idx);
         });
     });
 }

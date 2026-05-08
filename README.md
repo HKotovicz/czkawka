@@ -11,6 +11,12 @@
 
 **Cedinia** - experimental Android touch friendly GUI frontend for Czkawka Core, built with Slint.
 
+---
+
+> ⚠️ **This is a fork** of [qarmin/czkawka](https://github.com/qarmin/czkawka), vibecoded to give more control over hardware-accelerated video transcoding. See [Hardware Encoder Enhancements](#hardware-encoder-enhancements) below for details.
+
+---
+
 ## Features
 
 - **Written in memory-safe Rust** - almost 100% unsafe code free
@@ -38,8 +44,19 @@
     - **Broken Files** - Finds files that are invalid or corrupted
     - **Bad Extensions** - Lists files whose content not match with their extension
     - **Exif Remover** - Removes Exif metadata from various file types
-    - **Video Optimizer** - Crops from static parts and converts videos to more efficient formats
+    - **Video Optimizer** — Crops static parts, converts videos to more efficient formats, with enhanced hardware encoder control (separate decode/encode GPU selection, hwaccel decoding, permissive input handling)
     - **Bad Names** - Finds files with names that may be not wanted (e.g., containing special characters)
+
+## Hardware Encoder Enhancements (fork)
+
+This fork improves the **Video Optimizer** tool with fine-grained control over hardware-accelerated video transcoding:
+
+- **Hardware-accelerated decoding** — ffmpeg now uses GPU decoding (`-hwaccel`) so the entire pipeline runs on the GPU instead of decoding on CPU and encoding on GPU, roughly halving transcode time.
+- **Separate decoder / encoder selection** — Choose different GPUs for decoding and encoding. For example, CUDA-decode on an NVIDIA RTX 3060 while AMF-encoding on an AMD iGPU, or CUDA-decode while software-encoding AV1 on CPU. A `hwdownload` filter is automatically inserted when the two GPUs differ.
+- **Hardware decoder dropdown** — A new "Hardware Decoder" setting in the GUI optimize popup, defaulting to "Auto" (same GPU as encoder).
+- **Permissive input handling** — Damaged or slightly corrupted video files that play in media players but fail in vanilla ffmpeg are now handled with `-fflags +genpts` and `-err_detect ignore_err`.
+- **Audio re-encoding** — Audio is now transcoded to AAC 128 kbit/s instead of copied, fixing incompatibilities when the source uses older codecs (WMA, Vorbis, FLAC) that MP4 cannot hold.
+- **Encoder detection fix** — The startup hardware encoder probe now uses a 320×240 test frame instead of 64×64, which was below NVENC's minimum width (145 px) and caused the dropdown to show only "None."
 
 ![Krokiet](https://github.com/user-attachments/assets/3cc7ec6a-3d6a-42cb-9d33-4b0f0c547af6)
 
