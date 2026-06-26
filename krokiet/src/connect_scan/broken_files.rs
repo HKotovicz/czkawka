@@ -38,6 +38,12 @@ pub(crate) fn scan_broken_files(a: Weak<MainWindow>, sd: ScanData) {
             if sd.custom_settings.broken_files_sub_video_ffmpeg {
                 checked_types |= CheckedTypes::VIDEO_FFMPEG;
             }
+            if sd.custom_settings.broken_files_sub_font {
+                checked_types |= CheckedTypes::FONT;
+            }
+            if sd.custom_settings.broken_files_sub_markup {
+                checked_types |= CheckedTypes::MARKUP;
+            }
 
             if checked_types == CheckedTypes::NONE {
                 a.upgrade_in_event_loop(move |app| {
@@ -61,7 +67,7 @@ pub(crate) fn scan_broken_files(a: Weak<MainWindow>, sd: ScanData) {
             let info = tool.get_information();
             let stopped_search = tool.get_stopped_search();
             let size = tool.get_broken_files().iter().map(|e| e.size).sum::<u64>();
-            sd.shared_models.lock().unwrap().shared_broken_files_state = Some(tool);
+            sd.shared_models.lock().expect("Mutex poisoned").shared_broken_files_state = Some(tool);
 
             let messages_data = MessagesData { critical, messages };
 

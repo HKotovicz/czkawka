@@ -1,7 +1,7 @@
 use slint::{ComponentHandle, ModelRc, SharedString, VecModel};
 
 use crate::settings::gui_settings_values::StringComboBoxItems;
-use crate::{BigFilesSettings, DuplicateSettings, GeneralSettings, MainWindow, SameMusicSettings, SimilarImagesSettings, Translations, flc};
+use crate::{BigFilesSettings, DuplicateSettings, GeneralSettings, MainWindow, SameMusicSettings, SimilarImagesSettings, SimilarVideosSettings, Translations, flc};
 
 pub(crate) fn translate_items(app: &MainWindow) {
     let t = app.global::<Translations>();
@@ -18,6 +18,7 @@ pub(crate) fn translate_items(app: &MainWindow) {
     t.set_tool_same_music_text(flc!("tool_same_music").into());
     t.set_tool_bad_names_text(flc!("tool_bad_names").into());
     t.set_tool_exif_remover_text(flc!("tool_exif_remover").into());
+    t.set_tool_similar_videos_text(flc!("tool_similar_videos").into());
     t.set_tool_directories_text(flc!("tool_directories").into());
     t.set_tool_settings_text(flc!("tool_settings").into());
 
@@ -32,6 +33,7 @@ pub(crate) fn translate_items(app: &MainWindow) {
     t.set_home_same_music_description_text(flc!("home_same_music_description").into());
     t.set_home_bad_names_description_text(flc!("home_bad_names_description").into());
     t.set_home_exif_description_text(flc!("home_exif_description").into());
+    t.set_home_similar_videos_description_text(flc!("home_similar_videos_description").into());
 
     t.set_scanning_text(flc!("scanning").into());
     t.set_stopping_text(flc!("stopping").into());
@@ -116,6 +118,7 @@ pub(crate) fn translate_items(app: &MainWindow) {
     t.set_settings_hash_size_text(flc!("settings_hash_size").into());
     t.set_settings_hash_alg_text(flc!("settings_hash_alg").into());
     t.set_settings_image_filter_text(flc!("settings_image_filter").into());
+    t.set_settings_geometric_invariance_text(flc!("settings_geometric_invariance").into());
     t.set_settings_ignore_same_size_text(flc!("settings_ignore_same_size").into());
     t.set_settings_gallery_image_fit_cover_text(flc!("settings_gallery_image_fit_cover").into());
     t.set_settings_gallery_image_fit_cover_desc_text(flc!("settings_gallery_image_fit_cover_desc").into());
@@ -143,6 +146,11 @@ pub(crate) fn translate_items(app: &MainWindow) {
     t.set_settings_broken_pdf_text(flc!("settings_broken_pdf").into());
     t.set_settings_broken_archive_text(flc!("settings_broken_archive").into());
     t.set_settings_broken_image_text(flc!("settings_broken_image").into());
+    t.set_settings_broken_font_text(flc!("settings_broken_font").into());
+    t.set_settings_broken_markup_text(flc!("settings_broken_markup").into());
+    t.set_settings_similar_videos_header_text(flc!("settings_similar_videos_header").into());
+    t.set_settings_similar_videos_audio_preset_text(flc!("settings_similar_videos_audio_preset").into());
+    t.set_settings_similar_videos_audio_preset_desc_text(flc!("settings_similar_videos_audio_preset_desc").into());
     t.set_settings_bad_names_header_text(flc!("settings_bad_names_header").into());
     t.set_settings_bad_names_checks_label_text(flc!("settings_bad_names_checks_label").into());
     t.set_settings_bad_names_uppercase_ext_text(flc!("settings_bad_names_uppercase_ext").into());
@@ -159,6 +167,11 @@ pub(crate) fn translate_items(app: &MainWindow) {
     t.set_diagnostics_open_thumbnails_folder_text(flc!("diagnostics_open_thumbnails_folder").into());
     t.set_diagnostics_clear_cache_text(flc!("diagnostics_clear_cache").into());
     t.set_diagnostics_open_cache_folder_text(flc!("diagnostics_open_cache_folder").into());
+    t.set_diagnostics_export_logs_text(flc!("diagnostics_export_logs").into());
+    t.set_logs_label_text(flc!("logs_label").into());
+    t.set_logs_export_title_text(flc!("logs_export_title").into());
+    t.set_logs_export_saved_text(flc!("logs_export_saved").into());
+    t.set_logs_export_failed_text(flc!("logs_export_failed").into());
     t.set_diagnostics_collect_test_text(flc!("diagnostics_collect_test").into());
     t.set_diagnostics_collect_test_desc_text(flc!("diagnostics_collect_test_desc").into());
     t.set_diagnostics_collect_test_run_text(flc!("diagnostics_collect_test_run").into());
@@ -187,7 +200,6 @@ pub(crate) fn translate_items(app: &MainWindow) {
     t.set_gallery_confirm_delete_text(flc!("gallery_confirm_delete").into());
     t.set_deleting_files_text(flc!("deleting_files").into());
     t.set_stop_text(flc!("stop").into());
-    t.set_files_suffix_text(flc!("files_suffix").into());
     t.set_scanning_fallback_text(flc!("scanning_fallback").into());
     t.set_app_subtitle_text(flc!("app_subtitle").into());
     t.set_app_license_text(flc!("app_license").into());
@@ -292,4 +304,7 @@ pub(crate) fn translate_items(app: &MainWindow) {
 
     let sm = app.global::<SameMusicSettings>();
     sm.set_check_method_options(make_options(&combo_items.same_music_check_method));
+
+    let sv = app.global::<SimilarVideosSettings>();
+    sv.set_audio_preset_options(make_options(&combo_items.similar_videos_audio_preset));
 }

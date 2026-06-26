@@ -44,8 +44,14 @@ fn default_hash_alg() -> String {
 fn default_image_filter() -> String {
     "triangle".to_string()
 }
+fn default_geometric_invariance() -> String {
+    "off".to_string()
+}
 fn default_same_music_check_method() -> String {
     "tags".to_string()
+}
+fn default_similar_videos_audio_preset() -> String {
+    "clip_in_longer".to_string()
 }
 fn default_excluded_items() -> String {
     #[cfg(not(target_os = "android"))]
@@ -96,6 +102,8 @@ pub struct CediniaSettings {
     pub similar_images_hash_alg: String,
     #[serde(default = "default_image_filter")]
     pub similar_images_image_filter: String,
+    #[serde(default = "default_geometric_invariance")]
+    pub similar_images_geometric_invariance: String,
     #[serde(default)]
     pub similar_images_ignore_same_size: bool,
     #[serde(default)]
@@ -133,6 +141,13 @@ pub struct CediniaSettings {
     pub broken_files_archive: bool,
     #[serde(default = "ttrue")]
     pub broken_files_image: bool,
+    #[serde(default = "ttrue")]
+    pub broken_files_font: bool,
+    #[serde(default = "ttrue")]
+    pub broken_files_markup: bool,
+
+    #[serde(default = "default_similar_videos_audio_preset")]
+    pub similar_videos_audio_preset: String,
 
     #[serde(default = "ttrue")]
     pub bad_names_uppercase_extension: bool,
@@ -281,7 +296,9 @@ pub fn save_settings(settings: &CediniaSettings) {
 
 use slint::ComponentHandle;
 
-use crate::{BadNamesSettings, BigFilesSettings, BrokenFilesSettings, DuplicateSettings, GeneralSettings, MainWindow, SameMusicSettings, SimilarImagesSettings};
+use crate::{
+    BadNamesSettings, BigFilesSettings, BrokenFilesSettings, DuplicateSettings, GeneralSettings, MainWindow, SameMusicSettings, SimilarImagesSettings, SimilarVideosSettings,
+};
 
 pub fn apply_settings_to_gui(win: &MainWindow, s: &CediniaSettings) {
     let items = StringComboBoxItems::new();
@@ -329,6 +346,11 @@ pub fn apply_settings_to_gui(win: &MainWindow, s: &CediniaSettings) {
     win.global::<SimilarImagesSettings>().set_image_filter_idx(if_idx as i32);
     win.global::<SimilarImagesSettings>().set_image_filter_value(s.similar_images_image_filter.clone().into());
 
+    let gi_idx = StringComboBoxItems::idx_from_config_name(&s.similar_images_geometric_invariance, &items.image_geometric_invariance);
+    win.global::<SimilarImagesSettings>().set_geometric_invariance_idx(gi_idx as i32);
+    win.global::<SimilarImagesSettings>()
+        .set_geometric_invariance_value(s.similar_images_geometric_invariance.clone().into());
+
     win.global::<SimilarImagesSettings>().set_ignore_same_size(s.similar_images_ignore_same_size);
     win.global::<SimilarImagesSettings>().set_ignore_same_resolution(s.similar_images_ignore_same_resolution);
     win.global::<SimilarImagesSettings>().set_gallery_image_fit_cover(s.gallery_image_fit_cover);
@@ -358,6 +380,8 @@ pub fn apply_settings_to_gui(win: &MainWindow, s: &CediniaSettings) {
     bf.set_check_pdf(s.broken_files_pdf);
     bf.set_check_archive(s.broken_files_archive);
     bf.set_check_image(s.broken_files_image);
+    bf.set_check_font(s.broken_files_font);
+    bf.set_check_markup(s.broken_files_markup);
 
     let bn = win.global::<BadNamesSettings>();
     bn.set_uppercase_extension(s.bad_names_uppercase_extension);
@@ -365,6 +389,10 @@ pub fn apply_settings_to_gui(win: &MainWindow, s: &CediniaSettings) {
     bn.set_space_at_start_or_end(s.bad_names_space_at_start_or_end);
     bn.set_non_ascii_graphical(s.bad_names_non_ascii_graphical);
     bn.set_remove_duplicated_non_alpha(s.bad_names_remove_duplicated_non_alpha);
+
+    let sv_idx = StringComboBoxItems::idx_from_config_name(&s.similar_videos_audio_preset, &items.similar_videos_audio_preset);
+    win.global::<SimilarVideosSettings>().set_audio_preset_idx(sv_idx as i32);
+    win.global::<SimilarVideosSettings>().set_audio_preset_value(s.similar_videos_audio_preset.clone().into());
 }
 
 pub fn collect_settings_from_gui(win: &MainWindow) -> CediniaSettings {
@@ -376,6 +404,7 @@ pub fn collect_settings_from_gui(win: &MainWindow) -> CediniaSettings {
     let sm = win.global::<SameMusicSettings>();
     let bf = win.global::<BrokenFilesSettings>();
     let bn = win.global::<BadNamesSettings>();
+    let sv = win.global::<SimilarVideosSettings>();
 
     CediniaSettings {
         use_cache: g.get_use_cache(),
@@ -415,6 +444,10 @@ pub fn collect_settings_from_gui(win: &MainWindow) -> CediniaSettings {
             .image_filter
             .get(si.get_image_filter_idx() as usize)
             .map_or_else(|| panic!("Invalid image_filter_idx {} in GUI", si.get_image_filter_idx()), |e| e.config_name.clone()),
+        similar_images_geometric_invariance: items.image_geometric_invariance.get(si.get_geometric_invariance_idx() as usize).map_or_else(
+            || panic!("Invalid geometric_invariance_idx {} in GUI", si.get_geometric_invariance_idx()),
+            |e| e.config_name.clone(),
+        ),
         similar_images_ignore_same_size: si.get_ignore_same_size(),
         similar_images_ignore_same_resolution: si.get_ignore_same_resolution(),
         gallery_image_fit_cover: si.get_gallery_image_fit_cover(),
@@ -441,10 +474,13 @@ pub fn collect_settings_from_gui(win: &MainWindow) -> CediniaSettings {
         broken_files_pdf: bf.get_check_pdf(),
         broken_files_archive: bf.get_check_archive(),
         broken_files_image: bf.get_check_image(),
+        broken_files_font: bf.get_check_font(),
+        broken_files_markup: bf.get_check_markup(),
         bad_names_uppercase_extension: bn.get_uppercase_extension(),
         bad_names_emoji_used: bn.get_emoji_used(),
         bad_names_space_at_start_or_end: bn.get_space_at_start_or_end(),
         bad_names_non_ascii_graphical: bn.get_non_ascii_graphical(),
         bad_names_remove_duplicated_non_alpha: bn.get_remove_duplicated_non_alpha(),
+        similar_videos_audio_preset: StringComboBoxItems::config_name_from_idx(&items.similar_videos_audio_preset, sv.get_audio_preset_idx(), "clip_in_longer"),
     }
 }

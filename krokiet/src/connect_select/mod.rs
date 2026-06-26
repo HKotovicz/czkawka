@@ -1,13 +1,17 @@
 pub(crate) mod custom_select;
 
+use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
+use log::error;
 use regex::Regex;
-use slint::{ComponentHandle, Model, ModelRc, VecModel};
+use slint::{ComponentHandle, Model, ModelRc, SharedString, VecModel};
 
 use crate::common::{connect_i32_into_u64, create_model_from_model_vec};
 use crate::connect_row_selection::checker::change_number_of_enabled_items;
 use crate::connect_translation::translate_select_mode;
+use crate::settings::model::{SavedCustomSelectColumnState, SavedCustomSelectTabState};
+use crate::settings::{get_custom_select_state_file, load_data_from_file, save_data_to_file};
 use crate::shared_models::SharedModels;
 use crate::{ActiveTab, Callabler, CustomSelectColumnModel, GuiState, MainWindow, SelectMode, SelectModel, Settings, SingleMainListModel};
 
@@ -38,8 +42,8 @@ pub(crate) fn connect_select(app: &MainWindow, shared_models: &Arc<Mutex<SharedM
             SelectMode::InvertSelectionInGroup => invert_selection_in_group(&current_model),
             SelectMode::SelectTheBiggestSize => select_by_property(&current_model, active_tab, Property::Size, true),
             SelectMode::SelectTheSmallestSize => select_by_property(&current_model, active_tab, Property::Size, false),
-            SelectMode::SelectTheBiggestResolution => select_by_property(&current_model, active_tab, Property::Resolution, false),
-            SelectMode::SelectTheSmallestResolution => select_by_property(&current_model, active_tab, Property::Resolution, true),
+            SelectMode::SelectTheBiggestResolution => select_by_property(&current_model, active_tab, Property::Resolution, true),
+            SelectMode::SelectTheSmallestResolution => select_by_property(&current_model, active_tab, Property::Resolution, false),
             SelectMode::SelectNewest => select_by_property(&current_model, active_tab, Property::Date, true),
             SelectMode::SelectOldest => select_by_property(&current_model, active_tab, Property::Date, false),
             SelectMode::SelectShortestPath => select_by_property(&current_model, active_tab, Property::PathLength, false),
@@ -70,7 +74,26 @@ pub(crate) fn connect_select(app: &MainWindow, shared_models: &Arc<Mutex<SharedM
     app.global::<Callabler>().on_populate_custom_select_columns(move || {
         let app = a.upgrade().expect("Failed to upgrade app :(");
         let active_tab = app.global::<GuiState>().get_active_tab();
-        let columns = custom_select::build_custom_select_columns(active_tab);
+        let save_restore = app.global::<Settings>().get_popup_custom_select_save_restore();
+
+        let mut columns = custom_select::build_custom_select_columns(active_tab);
+
+        if save_restore {
+            let tab_key = format!("{active_tab:?}");
+            let saved_states: BTreeMap<String, SavedCustomSelectTabState> = load_data_from_file(get_custom_select_state_file()).unwrap_or_default();
+            if let Some(saved) = saved_states.get(&tab_key) {
+                for (col, saved_col) in columns.iter_mut().zip(saved.columns.iter()) {
+                    col.enabled = saved_col.enabled;
+                    col.filter_value = SharedString::from(saved_col.filter_value.as_str());
+                }
+                app.global::<GuiState>().set_custom_select_restored_case_sensitive(saved.case_sensitive);
+                app.global::<GuiState>().set_custom_select_restored_leave_one_in_group(saved.leave_one_in_group);
+            } else {
+                app.global::<GuiState>().set_custom_select_restored_case_sensitive(false);
+                app.global::<GuiState>().set_custom_select_restored_leave_one_in_group(true);
+            }
+        }
+
         app.global::<GuiState>().set_custom_select_columns(create_model_from_model_vec(&columns));
     });
 
@@ -79,22 +102,46 @@ pub(crate) fn connect_select(app: &MainWindow, shared_models: &Arc<Mutex<SharedM
         let app = a.upgrade().expect("Failed to upgrade app :(");
         let model = app.global::<GuiState>().get_custom_select_columns();
         let idx = idx as usize;
-        if let Some(mut col) = model.row_data(idx) {
-            col.enabled = enabled;
-            col.filter_value = filter_value;
-            model.set_row_data(idx, col);
-        }
+        let mut col = model
+            .row_data(idx)
+            .unwrap_or_else(|| panic!("Custom select column idx={idx} out of bounds (row_count={})", model.row_count()));
+        col.enabled = enabled;
+        col.filter_value = filter_value;
+        model.set_row_data(idx, col);
     });
 
     let a = app.as_weak();
     app.global::<Callabler>()
-        .on_select_items_custom_columns(move |select_mode, case_sensitive, leave_one_in_group| {
+        .on_select_items_custom_columns(move |select_mode, case_sensitive, leave_one_in_group, save_restore| {
             let app = a.upgrade().expect("Failed to upgrade app :(");
             let active_tab = app.global::<GuiState>().get_active_tab();
             let current_model = active_tab.get_tool_model(&app);
             let columns: Vec<CustomSelectColumnModel> = app.global::<GuiState>().get_custom_select_columns().iter().collect();
 
             let leave_one_in_group = leave_one_in_group && (active_tab.get_is_header_mode() && !shared_models.lock().expect("Lock poisoned").get_use_reference_folders(active_tab));
+
+            if save_restore {
+                let tab_key = format!("{active_tab:?}");
+                let mut saved_states: BTreeMap<String, SavedCustomSelectTabState> = load_data_from_file(get_custom_select_state_file()).unwrap_or_default();
+                let saved_columns = columns
+                    .iter()
+                    .map(|c| SavedCustomSelectColumnState {
+                        enabled: c.enabled,
+                        filter_value: c.filter_value.to_string(),
+                    })
+                    .collect();
+                saved_states.insert(
+                    tab_key,
+                    SavedCustomSelectTabState {
+                        case_sensitive,
+                        leave_one_in_group,
+                        columns: saved_columns,
+                    },
+                );
+                if let Err(e) = save_data_to_file(get_custom_select_state_file(), &saved_states) {
+                    error!("Failed to save custom select state: {e}");
+                }
+            }
 
             let (checked_items, unchecked_items, new_model) =
                 custom_select::select_custom_columns(&current_model, active_tab, select_mode, &columns, case_sensitive, leave_one_in_group);
@@ -181,7 +228,6 @@ pub(crate) fn set_select_buttons(app: &MainWindow) {
 
 fn extract_comparable_field(model: &SingleMainListModel, property: Property, active_tab: ActiveTab) -> u64 {
     let mut val_ints = model.val_int.iter();
-    let mut val_strs = model.val_str.iter();
     match property {
         Property::Size => {
             let high = val_ints.nth(active_tab.get_int_size_idx()).expect("can find file size property");
@@ -193,12 +239,18 @@ fn extract_comparable_field(model: &SingleMainListModel, property: Property, act
             let low = val_ints.next().expect("can find file last modified property");
             connect_i32_into_u64(high, low)
         }
-        Property::PathLength => val_strs.nth(active_tab.get_str_path_idx()).expect("can find file path property").len() as u64,
+        Property::PathLength => {
+            let path_len = model.val_str.iter().nth(active_tab.get_str_path_idx()).expect("can find file path property").len();
+            let name_len = model.val_str.iter().nth(active_tab.get_str_name_idx()).expect("can find file name property").len();
+            // Primary key: directory path length; secondary key: filename length.
+            // Packed into a single u64 so the existing comparison infrastructure works unchanged.
+            ((path_len as u64) << 32) | (name_len as u64)
+        }
         Property::Resolution => val_ints.nth(active_tab.get_int_pixel_count_idx()).expect("can find pixel count proerty") as u64,
     }
 }
 
-fn select_by_property(model: &ModelRc<SingleMainListModel>, active_tab: ActiveTab, property: Property, increasing_order: bool) -> SelectionResult {
+fn select_by_property(model: &ModelRc<SingleMainListModel>, active_tab: ActiveTab, property: Property, select_max: bool) -> SelectionResult {
     let mut checked_items = 0;
 
     let is_header_mode = active_tab.get_is_header_mode();
@@ -206,7 +258,7 @@ fn select_by_property(model: &ModelRc<SingleMainListModel>, active_tab: ActiveTa
 
     let mut old_data = model.iter().collect::<Vec<_>>();
     let headers_idx = find_header_idx_and_deselect_all(&mut old_data);
-    if increasing_order {
+    if select_max {
         for i in 0..(headers_idx.len() - 1) {
             let mut max_item = 0;
             let mut max_item_idx = 1;
@@ -246,9 +298,9 @@ fn select_by_property(model: &ModelRc<SingleMainListModel>, active_tab: ActiveTa
 }
 
 // Selects all items in each group EXCEPT the one with the extreme property value.
-// `increasing_order: true`  → spares the biggest/newest/longest item (selects all others).
-// `increasing_order: false` → spares the smallest/oldest/shortest item (selects all others).
-fn select_all_except_by_property(model: &ModelRc<SingleMainListModel>, active_tab: ActiveTab, property: Property, increasing_order: bool) -> SelectionResult {
+// `spare_max: true`  → spares the biggest/newest/longest item (selects all others).
+// `spare_max: false` → spares the smallest/oldest/shortest item (selects all others).
+fn select_all_except_by_property(model: &ModelRc<SingleMainListModel>, active_tab: ActiveTab, property: Property, spare_max: bool) -> SelectionResult {
     let mut checked_items = 0;
     let mut unchecked_items = 0;
 
@@ -266,11 +318,11 @@ fn select_all_except_by_property(model: &ModelRc<SingleMainListModel>, active_ta
         let group_end = headers_idx[i + 1];
 
         // Find the extreme item to spare.
-        let mut extreme_val = if increasing_order { 0u64 } else { u64::MAX };
+        let mut extreme_val = if spare_max { 0u64 } else { u64::MAX };
         let mut extreme_idx = group_start;
         for j in group_start..group_end {
             let val = extract_comparable_field(&old_data[j], property, active_tab);
-            if increasing_order && val > extreme_val || !increasing_order && val < extreme_val {
+            if spare_max && val > extreme_val || !spare_max && val < extreme_val {
                 extreme_val = val;
                 extreme_idx = j;
             }
@@ -392,9 +444,38 @@ fn find_header_idx_and_deselect_all(old_data: &mut [SingleMainListModel]) -> Vec
 
 #[cfg(test)]
 mod tests {
+    use slint::{ModelRc, SharedString, VecModel};
+
     use super::*;
-    use crate::common::create_model_from_model_vec;
+    use crate::common::{MAX_INT_DATA_DUPLICATE_FILES, MAX_STR_DATA_DUPLICATE_FILES, create_model_from_model_vec, split_u64_into_i32s};
     use crate::test_common::get_model_vec;
+
+    // Builds a DuplicateFiles row with the given size encoded in val_int.
+    // IntDataDuplicateFiles layout: [ModDatePart1, ModDatePart2, SizePart1, SizePart2]
+    fn make_item_with_size(size: u64) -> SingleMainListModel {
+        let (part1, part2) = split_u64_into_i32s(size);
+        let ints: [i32; MAX_INT_DATA_DUPLICATE_FILES] = [0, 0, part1, part2];
+        let strs: [SharedString; MAX_STR_DATA_DUPLICATE_FILES] = [SharedString::from(""), SharedString::from(""), SharedString::from(""), SharedString::from("")];
+        SingleMainListModel {
+            val_int: ModelRc::new(VecModel::from(ints.to_vec())),
+            val_str: ModelRc::new(VecModel::from(strs.to_vec())),
+            ..crate::test_common::get_main_list_model()
+        }
+    }
+
+    // Builds a DuplicateFiles row with the given path and name in val_str.
+    // StrDataDuplicateFiles layout: [Size_display, Name, Path, ModDate]
+    fn make_item_with_path(path: &str, name: &str) -> SingleMainListModel {
+        let ints: [i32; MAX_INT_DATA_DUPLICATE_FILES] = [0; MAX_INT_DATA_DUPLICATE_FILES];
+        let strs: [SharedString; MAX_STR_DATA_DUPLICATE_FILES] = [SharedString::from(""), SharedString::from(name), SharedString::from(path), SharedString::from("")];
+        SingleMainListModel {
+            val_int: ModelRc::new(VecModel::from(ints.to_vec())),
+            val_str: ModelRc::new(VecModel::from(strs.to_vec())),
+            ..crate::test_common::get_main_list_model()
+        }
+    }
+
+    // ...existing code...
 
     #[test]
     fn find_header_idx_returns_correct_indices_for_headers() {
@@ -515,5 +596,202 @@ mod tests {
         assert_eq!(unchecked_items, 0);
         assert!(!new_model.row_data(0).unwrap().checked);
         assert!(!new_model.row_data(2).unwrap().checked);
+    }
+
+    //  select_all_except_by_property
+
+    #[test]
+    fn select_all_except_biggest_spares_largest_item() {
+        // Layout: [header, small(100), medium(200), large(300)]
+        let mut header = crate::test_common::get_main_list_model();
+        header.header_row = true;
+        let items = vec![header, make_item_with_size(100), make_item_with_size(200), make_item_with_size(300)];
+        let model = create_model_from_model_vec(&items);
+
+        let (checked_items, unchecked_items, new_model) = select_all_except_by_property(&model, ActiveTab::DuplicateFiles, Property::Size, true);
+
+        assert_eq!(checked_items, 2);
+        assert_eq!(unchecked_items, 0);
+        assert!(new_model.row_data(1).unwrap().checked); // 100 - selected
+        assert!(new_model.row_data(2).unwrap().checked); // 200 - selected
+        assert!(!new_model.row_data(3).unwrap().checked); // 300 - spared (biggest)
+    }
+
+    #[test]
+    fn select_all_except_smallest_spares_smallest_item() {
+        // Layout: [header, small(100), medium(200), large(300)]
+        let mut header = crate::test_common::get_main_list_model();
+        header.header_row = true;
+        let items = vec![header, make_item_with_size(100), make_item_with_size(200), make_item_with_size(300)];
+        let model = create_model_from_model_vec(&items);
+
+        let (checked_items, unchecked_items, new_model) = select_all_except_by_property(&model, ActiveTab::DuplicateFiles, Property::Size, false);
+
+        assert_eq!(checked_items, 2);
+        assert_eq!(unchecked_items, 0);
+        assert!(!new_model.row_data(1).unwrap().checked); // 100 - spared (smallest)
+        assert!(new_model.row_data(2).unwrap().checked); // 200 - selected
+        assert!(new_model.row_data(3).unwrap().checked); // 300 - selected
+    }
+
+    #[test]
+    fn select_all_except_operates_independently_per_group() {
+        // Group 1: [header, 100, 300]  - spare 300 (biggest) / spare 100 (smallest)
+        // Group 2: [header, 50, 150]   - spare 150 (biggest) / spare 50  (smallest)
+        let mut h1 = crate::test_common::get_main_list_model();
+        h1.header_row = true;
+        let mut h2 = crate::test_common::get_main_list_model();
+        h2.header_row = true;
+        let items = vec![
+            h1,
+            make_item_with_size(100),
+            make_item_with_size(300),
+            h2,
+            make_item_with_size(50),
+            make_item_with_size(150),
+        ];
+        let model = create_model_from_model_vec(&items);
+
+        let (_checked, _unchecked, new_model) = select_all_except_by_property(&model, ActiveTab::DuplicateFiles, Property::Size, true);
+
+        assert!(new_model.row_data(1).unwrap().checked); // 100 - selected
+        assert!(!new_model.row_data(2).unwrap().checked); // 300 - spared (biggest in group 1)
+        assert!(new_model.row_data(4).unwrap().checked); // 50 - selected
+        assert!(!new_model.row_data(5).unwrap().checked); // 150 - spared (biggest in group 2)
+    }
+
+    #[test]
+    fn select_all_except_delta_accounts_for_previously_checked_items() {
+        // Items 1 and 2 are pre-checked; biggest (300) will be spared → item 1 gets unchecked again.
+        let mut header = crate::test_common::get_main_list_model();
+        header.header_row = true;
+        let mut item_small = make_item_with_size(100);
+        item_small.checked = true; // pre-checked
+        let mut item_medium = make_item_with_size(200);
+        item_medium.checked = true; // pre-checked
+        let item_large = make_item_with_size(300);
+        let items = vec![header, item_small, item_medium, item_large];
+        let model = create_model_from_model_vec(&items);
+
+        let (checked_items, unchecked_items, new_model) = select_all_except_by_property(&model, ActiveTab::DuplicateFiles, Property::Size, true);
+
+        // item_small was already checked → not counted as newly checked
+        // item_medium was already checked → not counted as newly checked
+        // item_large was unchecked and will be spared → no change counted for it
+        assert_eq!(checked_items, 0);
+        // item_large was not checked, so it contributes 0 unchecked_items; medium was checked but stays checked
+        // Actually item_large remains unchecked (spared), so unchecked_items should be 0
+        assert_eq!(unchecked_items, 0);
+        assert!(new_model.row_data(1).unwrap().checked);
+        assert!(new_model.row_data(2).unwrap().checked);
+        assert!(!new_model.row_data(3).unwrap().checked);
+    }
+
+    #[test]
+    fn select_all_except_counts_unchecked_when_spared_item_was_previously_checked() {
+        // Only item_large is pre-checked; it will be spared → unchecked_items += 1.
+        let mut header = crate::test_common::get_main_list_model();
+        header.header_row = true;
+        let item_small = make_item_with_size(100);
+        let item_medium = make_item_with_size(200);
+        let mut item_large = make_item_with_size(300);
+        item_large.checked = true; // pre-checked, but will be spared
+        let items = vec![header, item_small, item_medium, item_large];
+        let model = create_model_from_model_vec(&items);
+
+        let (checked_items, unchecked_items, new_model) = select_all_except_by_property(&model, ActiveTab::DuplicateFiles, Property::Size, true);
+
+        assert_eq!(checked_items, 2); // small and medium go from unchecked → checked
+        assert_eq!(unchecked_items, 1); // large goes from checked → unchecked (spared)
+        assert!(new_model.row_data(1).unwrap().checked);
+        assert!(new_model.row_data(2).unwrap().checked);
+        assert!(!new_model.row_data(3).unwrap().checked);
+    }
+
+    #[test]
+    fn select_all_except_longest_path_spares_item_with_longest_full_path() {
+        // StrDataDuplicateFiles: [Size_display, Name, Path, ModDate]
+        // Primary sort key: directory path length; secondary: filename length.
+        let mut header = crate::test_common::get_main_list_model();
+        header.header_row = true;
+        // short: "/a" (dir=2) + "x.jpg"    → key (2, 5)
+        // medium: "/ab" (dir=3) + "x.jpg"  → key (3, 5)
+        // long: "/abc" (dir=4) + "x.jpg"   → key (4, 5)
+        let items = vec![
+            header,
+            make_item_with_path("/a", "x.jpg"),
+            make_item_with_path("/ab", "x.jpg"),
+            make_item_with_path("/abc", "x.jpg"),
+        ];
+        let model = create_model_from_model_vec(&items);
+
+        let (_checked, _unchecked, new_model) = select_all_except_by_property(&model, ActiveTab::DuplicateFiles, Property::PathLength, true);
+
+        assert!(new_model.row_data(1).unwrap().checked); // short - selected
+        assert!(new_model.row_data(2).unwrap().checked); // medium - selected
+        assert!(!new_model.row_data(3).unwrap().checked); // long - spared (longest)
+    }
+
+    #[test]
+    fn select_all_except_shortest_path_spares_item_with_shortest_full_path() {
+        // Primary sort key: directory path length; secondary: filename length.
+        let mut header = crate::test_common::get_main_list_model();
+        header.header_row = true;
+        let items = vec![
+            header,
+            make_item_with_path("/a", "x.jpg"),
+            make_item_with_path("/ab", "x.jpg"),
+            make_item_with_path("/abc", "x.jpg"),
+        ];
+        let model = create_model_from_model_vec(&items);
+
+        let (_checked, _unchecked, new_model) = select_all_except_by_property(&model, ActiveTab::DuplicateFiles, Property::PathLength, false);
+
+        assert!(!new_model.row_data(1).unwrap().checked); // short - spared (shortest)
+        assert!(new_model.row_data(2).unwrap().checked); // medium - selected
+        assert!(new_model.row_data(3).unwrap().checked); // long - selected
+    }
+
+    #[test]
+    fn select_all_except_shortest_path_uses_filename_to_break_ties_in_same_directory() {
+        // All files share the same directory; path length differs only by filename.
+        let mut header = crate::test_common::get_main_list_model();
+        header.header_row = true;
+        // IMG_0001.JPG (13 chars) < IMG_0001-1.JPG (15 chars) < IMG_0001-2.JPG (15 chars)
+        let items = vec![
+            header,
+            make_item_with_path("/photos", "IMG_0001.JPG"),
+            make_item_with_path("/photos", "IMG_0001-1.JPG"),
+            make_item_with_path("/photos", "IMG_0001-2.JPG"),
+        ];
+        let model = create_model_from_model_vec(&items);
+
+        let (_checked, _unchecked, new_model) = select_all_except_by_property(&model, ActiveTab::DuplicateFiles, Property::PathLength, false);
+
+        assert!(!new_model.row_data(1).unwrap().checked); // IMG_0001.JPG - spared (shortest)
+        assert!(new_model.row_data(2).unwrap().checked);
+        assert!(new_model.row_data(3).unwrap().checked);
+    }
+
+    #[test]
+    fn select_all_except_shortest_path_prefers_directory_length_over_filename_length() {
+        // File in a shorter directory but with a long name must still be spared
+        // over a file in a longer directory with a short name.
+        // Before the fix, summing lengths could invert this result.
+        let mut header = crate::test_common::get_main_list_model();
+        header.header_row = true;
+        // short_dir + long_name  → dir=3, name=20 → was sum=23, now key=(3<<32)|20
+        // long_dir  + short_name → dir=20, name=3  → was sum=23, now key=(20<<32)|3
+        let items = vec![
+            header,
+            make_item_with_path("/sd", "a_very_long_filename.jpg"),   // dir shorter → spared
+            make_item_with_path("/a/much/longer/directory", "b.jpg"), // dir longer → selected
+        ];
+        let model = create_model_from_model_vec(&items);
+
+        let (_checked, _unchecked, new_model) = select_all_except_by_property(&model, ActiveTab::DuplicateFiles, Property::PathLength, false);
+
+        assert!(!new_model.row_data(1).unwrap().checked); // shorter dir - spared
+        assert!(new_model.row_data(2).unwrap().checked); // longer dir - selected
     }
 }

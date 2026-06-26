@@ -5,21 +5,17 @@ window_progress_title = Scanning
 window_compare_images = Compare Images
 
 # General
-general_ok_button = Ok
+general_ok_button = OK
 general_close_button = Close
 
 # Krokiet info dialog
-krokiet_info_title = Introducing Krokiet - New version of Czkawka
+krokiet_info_title = Deprecation Notice
 krokiet_info_message =
-        Krokiet is the new, improved, faster and more reliable version of the Czkawka GTK GUI!
+        Czkawka GTK 12.0 is the final release. No further updates, features, or bug fixes are planned.
 
-        It’s easier to run and more resilient to system changes, as it depends only on core libraries available on most systems by default.
+        Most features from Czkawka GTK are available in Krokiet, usually in a simpler, faster, and more stable form. Krokiet also adds new features and improvements that were not possible in the GTK version.
 
-        Krokiet also brings features that Czkawka lacks, including thumbnails in video comparison mode, an EXIF cleaner, file move/copy/delete progress or extended sorting options.
-
-        Give it a try and see the difference!
-
-        Czkawka will continue to receive bug fixes and minor updates from me, but all new features will be developed exclusively for Krokiet, and anyone is free to contribute new features add missing modes or extend Czkawka further.
+        If you are still using Czkawka GTK, switching to Krokiet should be easy, since it has a similar interface, fewer dependencies, and better cross-platform support.
 
         PS: This message should appear only once. If it shows up again, set the CZKAWKA_DONT_ANNOY_ME environment variable to any non-empty value.
 
@@ -114,6 +110,9 @@ image_hash_alg_tooltip =
 
         So, to determine the best one for you, manual testing is required.
 
+image_geometric_invariance_tooltip =
+        Also compare mirrored/flipped and optionally rotated variants of each image. This improves matching but increases hashing time.
+
 big_files_mode_combobox_tooltip = Allows to search for smallest/biggest files
 big_files_mode_label = Checked files
 big_files_mode_smallest_combo_box = The Smallest
@@ -156,6 +155,7 @@ main_tree_view_column_codec = Codec
 main_label_check_method = Check method
 main_label_hash_type = Hash type
 main_label_hash_size = Hash size
+main_label_geometric_invariance = Geometric invariance
 main_label_size_bytes = Size (bytes)
 main_label_min_size = Min
 main_label_max_size = Max
@@ -355,6 +355,22 @@ about_translation_button = Translation
 # Header
 header_setting_button_tooltip = Opens settings dialog.
 header_about_button_tooltip = Opens dialog with info about app.
+header_krokiet_button_tooltip = Try Krokiet - the new and improved version!
+
+# Krokiet promo dialog
+krokiet_promo_title = Meet Krokiet!
+krokiet_promo_message =
+        Hello there, brave Czkawka user!
+
+        The Force is clearly with you, but Krokiet is not - a newer, faster, lighter, and significantly more handsome (assuming apps can actually be handsome) duplicate cleaner.
+
+        Krokiet includes everything people liked about Czkawka. It is completely free, open source, has a unique and simple UI (both praised and hated by many), introduces a lot of new features, uses fewer dependencies, and works far more reliably across different platforms.
+
+        And if you somehow missed it, there is already an even newer app than Krokiet - Cedinia, designed primarily for Android devices and touchscreen usage.
+
+        Czkawka GTK served us well, but its watch has ended.
+krokiet_promo_link_download = Download Krokiet/Cedinia
+krokiet_promo_link_project = Project page
 
 # Settings
 ## General
@@ -497,38 +513,6 @@ compute_found_broken_files = Found { $number_files } broken files in { $time }
 compute_found_bad_extensions = Found { $number_files } files with invalid extensions in { $time }
 
 # Progress window
-progress_scanning_general_file = {$file_number -> 
-        [one] Scanned {$file_number} file
-       *[other] Scanned {$file_number} files
-}
-
-progress_scanning_extension_of_files = Checked extension of {$file_checked}/{$all_files} file
-progress_scanning_broken_files = Checked {$file_checked}/{$all_files} file ({$data_checked}/{$all_data})
-progress_scanning_video = Hashed of {$file_checked}/{$all_files} video
-progress_creating_video_thumbnails = Created thumbnails of {$file_checked}/{$all_files} video
-progress_scanning_image = Hashed of {$file_checked}/{$all_files} image ({$data_checked}/{$all_data})
-progress_comparing_image_hashes = Compared {$file_checked}/{$all_files} image hash
-progress_scanning_music_tags_end = Compared tags of {$file_checked}/{$all_files} music file
-progress_scanning_music_tags = Read tags of {$file_checked}/{$all_files} music file
-progress_scanning_music_content_end = Compared fingerprint of {$file_checked}/{$all_files} music file
-progress_scanning_music_content = Calculated fingerprint of {$file_checked}/{$all_files} music file ({$data_checked}/{$all_data})
-progress_scanning_empty_folders = {$folder_number -> 
-        [one] Scanned {$folder_number} folder
-       *[other] Scanned {$folder_number} folders
-}
-progress_scanning_size = Scanned size of {$file_number} file
-progress_scanning_size_name = Scanned name and size of {$file_number} file
-progress_scanning_name = Scanned name of {$file_number} file
-progress_analyzed_partial_hash = Analyzed partial hash of {$file_checked}/{$all_files} files ({$data_checked}/{$all_data})
-progress_analyzed_full_hash = Analyzed full hash of {$file_checked}/{$all_files} files ({$data_checked}/{$all_data})
-progress_prehash_cache_loading = Loading prehash cache
-progress_prehash_cache_saving = Saving prehash cache
-progress_hash_cache_loading = Loading hash cache
-progress_hash_cache_saving = Saving hash cache
-progress_cache_loading = Loading cache
-progress_cache_saving = Saving cache
-progress_hiding_hard_link = Hiding hard links of {$file_checked}/{$all_files} file
-
 progress_current_stage = Current Stage:{"  "}
 progress_all_stages = All Stages:{"  "}
 
@@ -537,6 +521,7 @@ saving_loading_saving_success = Saved configuration to file { $name }.
 saving_loading_saving_failure = Failed to save configuration data to file { $name }, reason { $reason }.
 saving_loading_reset_configuration = Current configuration was cleared.
 saving_loading_loading_success = Properly loaded app configuration.
+saving_loading_no_config_file = No configuration file found, using default settings.
 
 saving_loading_failed_to_create_config_file = Failed to create config file "{ $path }", reason "{ $reason }".
 saving_loading_failed_to_read_config_file = Cannot load configuration from "{ $path }" because it does not exist or is not a file.

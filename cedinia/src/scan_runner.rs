@@ -5,16 +5,15 @@ use std::thread;
 
 use crossbeam_channel::{Receiver, Sender, unbounded};
 use czkawka_core::common::model::{CheckingMethod, HashType};
-use czkawka_core::common::progress_data::{CurrentStage, ProgressData as CoreProgress};
+use czkawka_core::common::progress_data::ProgressData as CoreProgress;
 use czkawka_core::common::tool_data::CommonData;
 use czkawka_core::re_exported::{FilterType, HashAlg};
 use czkawka_core::tools::big_file::SearchMode;
-use czkawka_core::tools::similar_images::SimilarityPreset;
+use czkawka_core::tools::similar_images::{GeometricInvariance, SimilarityPreset};
 
-use crate::flc;
 use crate::scanners::{
     scan_bad_extensions, scan_bad_names, scan_big_files, scan_broken_files, scan_duplicate_files, scan_empty_files, scan_empty_folders, scan_exif_remover, scan_same_music,
-    scan_similar_images, scan_temporary_files,
+    scan_similar_images, scan_similar_videos, scan_temporary_files,
 };
 
 #[derive(Debug, Clone)]
@@ -54,7 +53,7 @@ impl Default for CommonFilters {
             max_file_size_bytes: None,
             recursive_search: true,
             use_cache: true,
-            hide_hard_links: true,
+            hide_hard_links: false,
             delete_outdated_cache: true,
             save_also_as_json: false,
             referenced_dirs: Vec::new(),
@@ -80,6 +79,7 @@ pub enum ScanRequest {
         hash_size: u8,
         hash_alg: HashAlg,
         image_filter: FilterType,
+        geometric_invariance: GeometricInvariance,
         ignore_same_size: bool,
         ignore_same_resolution: bool,
         filters: CommonFilters,
@@ -128,14 +128,21 @@ pub enum ScanRequest {
         dirs: Vec<PathBuf>,
         filters: CommonFilters,
     },
+    SimilarVideos {
+        dirs: Vec<PathBuf>,
+        filters: CommonFilters,
+        audio_similarity_percent: f64,
+        audio_maximum_difference: f64,
+        audio_length_ratio: f64,
+        audio_min_duration_seconds: u32,
+    },
     Stop,
 }
 
 #[derive(Debug, Clone)]
 pub struct ProgressUpdate {
     pub step_name: String,
-    pub current: i32,
-    pub all: i32,
+    pub all_progress: i32,
     pub is_indeterminate: bool,
     pub scan_id: u32,
 }
@@ -154,11 +161,31 @@ pub enum ScanResult {
     SameMusic(Vec<FileItem>),
     BadNames(Vec<FileItem>),
     ExifRemover(Vec<FileItem>),
+    SimilarVideos(Vec<FileItem>),
     Finished(u32),
 }
 
 pub trait ScanResultHandler: Send + Sync + 'static {
     fn on_result(&self, result: ScanResult);
+}
+
+/// Holds a WakeLock for the scan's duration so Android doesn't throttle the worker thread.
+#[cfg(target_os = "android")]
+struct ScanWakeLock;
+
+#[cfg(target_os = "android")]
+impl ScanWakeLock {
+    fn acquire() -> Self {
+        crate::file_picker_android::acquire_wakelock();
+        ScanWakeLock
+    }
+}
+
+#[cfg(target_os = "android")]
+impl Drop for ScanWakeLock {
+    fn drop(&mut self) {
+        crate::file_picker_android::release_wakelock();
+    }
 }
 
 pub fn start_worker<H: ScanResultHandler>(handler: H) -> (Sender<ScanRequest>, Arc<AtomicBool>) {
@@ -181,23 +208,28 @@ fn worker_loop<H: ScanResultHandler + Sync>(req_rx: &Receiver<ScanRequest>, hand
     let handler = Arc::new(handler);
 
     while let Ok(req) = req_rx.recv() {
+        if matches!(req, ScanRequest::Stop) {
+            stop_flag.store(true, Ordering::Relaxed);
+            continue;
+        }
+
+        scan_id += 1;
+        #[cfg(target_os = "android")]
+        let _wakelock = ScanWakeLock::acquire();
+
         match req {
-            ScanRequest::Stop => {
-                stop_flag.store(true, Ordering::Relaxed);
-            }
+            ScanRequest::Stop => unreachable!(),
             ScanRequest::DuplicateFiles {
                 dirs,
                 check_method,
                 hash_type,
                 filters,
             } => {
-                scan_id += 1;
                 let items = scan_duplicate_files(dirs, check_method, hash_type, &filters, stop_flag, &handler, scan_id);
                 handler.on_result(ScanResult::DuplicateFiles(items));
                 handler.on_result(ScanResult::Finished(scan_id));
             }
             ScanRequest::EmptyFolders { dirs, filters } => {
-                scan_id += 1;
                 let items = scan_empty_folders(dirs, &filters, stop_flag, &handler, scan_id);
                 handler.on_result(ScanResult::EmptyFolders(items));
                 handler.on_result(ScanResult::Finished(scan_id));
@@ -208,17 +240,18 @@ fn worker_loop<H: ScanResultHandler + Sync>(req_rx: &Receiver<ScanRequest>, hand
                 hash_size,
                 hash_alg,
                 image_filter,
+                geometric_invariance,
                 ignore_same_size,
                 ignore_same_resolution,
                 filters,
             } => {
-                scan_id += 1;
                 let items = scan_similar_images(
                     dirs,
                     similarity_preset,
                     hash_size,
                     hash_alg,
                     image_filter,
+                    geometric_invariance,
                     ignore_same_size,
                     ignore_same_resolution,
                     &filters,
@@ -230,13 +263,11 @@ fn worker_loop<H: ScanResultHandler + Sync>(req_rx: &Receiver<ScanRequest>, hand
                 handler.on_result(ScanResult::Finished(scan_id));
             }
             ScanRequest::EmptyFiles { dirs, filters } => {
-                scan_id += 1;
                 let items = scan_empty_files(dirs, &filters, stop_flag, &handler, scan_id);
                 handler.on_result(ScanResult::EmptyFiles(items));
                 handler.on_result(ScanResult::Finished(scan_id));
             }
             ScanRequest::TemporaryFiles { dirs, extensions, filters } => {
-                scan_id += 1;
                 let items = scan_temporary_files(dirs, extensions, &filters, stop_flag, &handler, scan_id);
                 handler.on_result(ScanResult::TemporaryFiles(items));
                 handler.on_result(ScanResult::Finished(scan_id));
@@ -247,19 +278,16 @@ fn worker_loop<H: ScanResultHandler + Sync>(req_rx: &Receiver<ScanRequest>, hand
                 count,
                 filters,
             } => {
-                scan_id += 1;
                 let items = scan_big_files(dirs, search_mode, count, &filters, stop_flag, &handler, scan_id);
                 handler.on_result(ScanResult::BigFiles(items));
                 handler.on_result(ScanResult::Finished(scan_id));
             }
             ScanRequest::BrokenFiles { dirs, checked_types, filters } => {
-                scan_id += 1;
                 let items = scan_broken_files(dirs, checked_types, &filters, stop_flag, &handler, scan_id);
                 handler.on_result(ScanResult::BrokenFiles(items));
                 handler.on_result(ScanResult::Finished(scan_id));
             }
             ScanRequest::BadExtensions { dirs, filters } => {
-                scan_id += 1;
                 let items = scan_bad_extensions(dirs, &filters, stop_flag, &handler, scan_id);
                 handler.on_result(ScanResult::BadExtensions(items));
                 handler.on_result(ScanResult::Finished(scan_id));
@@ -271,7 +299,6 @@ fn worker_loop<H: ScanResultHandler + Sync>(req_rx: &Receiver<ScanRequest>, hand
                 check_method,
                 filters,
             } => {
-                scan_id += 1;
                 let items = scan_same_music(dirs, music_similarity, approximate, check_method, &filters, stop_flag, &handler, scan_id);
                 handler.on_result(ScanResult::SameMusic(items));
                 handler.on_result(ScanResult::Finished(scan_id));
@@ -285,7 +312,6 @@ fn worker_loop<H: ScanResultHandler + Sync>(req_rx: &Receiver<ScanRequest>, hand
                 non_ascii_graphical,
                 remove_duplicated_non_alpha,
             } => {
-                scan_id += 1;
                 let items = scan_bad_names(
                     dirs,
                     &filters,
@@ -302,75 +328,33 @@ fn worker_loop<H: ScanResultHandler + Sync>(req_rx: &Receiver<ScanRequest>, hand
                 handler.on_result(ScanResult::Finished(scan_id));
             }
             ScanRequest::ExifRemover { dirs, filters } => {
-                scan_id += 1;
                 let items = scan_exif_remover(dirs, &filters, stop_flag, &handler, scan_id);
                 handler.on_result(ScanResult::ExifRemover(items));
                 handler.on_result(ScanResult::Finished(scan_id));
             }
+            ScanRequest::SimilarVideos {
+                dirs,
+                filters,
+                audio_similarity_percent,
+                audio_maximum_difference,
+                audio_length_ratio,
+                audio_min_duration_seconds,
+            } => {
+                let items = scan_similar_videos(
+                    dirs,
+                    &filters,
+                    audio_similarity_percent,
+                    audio_maximum_difference,
+                    audio_length_ratio,
+                    audio_min_duration_seconds,
+                    stop_flag,
+                    &handler,
+                    scan_id,
+                );
+                handler.on_result(ScanResult::SimilarVideos(items));
+                handler.on_result(ScanResult::Finished(scan_id));
+            }
         }
-    }
-}
-
-fn stage_uses_bytes(stage: CurrentStage) -> bool {
-    matches!(
-        stage,
-        CurrentStage::DuplicatePreHashing | CurrentStage::DuplicateFullHashing | CurrentStage::SimilarImagesCalculatingHashes | CurrentStage::SameMusicCalculatingFingerprints
-    )
-}
-
-fn stage_label(stage: CurrentStage) -> String {
-    match stage {
-        CurrentStage::CollectingFiles => flc!("stage_collecting_files"),
-        CurrentStage::DuplicateScanningName => flc!("stage_scanning_name"),
-        CurrentStage::DuplicateScanningSizeName => flc!("stage_scanning_size_name"),
-        CurrentStage::DuplicateScanningSize => flc!("stage_scanning_size"),
-        CurrentStage::DuplicatePreHashing => flc!("stage_pre_hash"),
-        CurrentStage::DuplicateFullHashing => flc!("stage_full_hash"),
-        CurrentStage::DuplicateCacheLoading
-        | CurrentStage::DuplicatePreHashCacheLoading
-        | CurrentStage::SameMusicCacheLoadingTags
-        | CurrentStage::SameMusicCacheLoadingFingerprints
-        | CurrentStage::ExifRemoverCacheLoading => flc!("stage_loading_cache"),
-        CurrentStage::DuplicateCacheSaving
-        | CurrentStage::DuplicatePreHashCacheSaving
-        | CurrentStage::SameMusicCacheSavingTags
-        | CurrentStage::SameMusicCacheSavingFingerprints
-        | CurrentStage::ExifRemoverCacheSaving => flc!("stage_saving_cache"),
-        CurrentStage::SimilarImagesCalculatingHashes => flc!("stage_calculating_image_hashes"),
-        CurrentStage::SimilarImagesComparingHashes => flc!("stage_comparing_images"),
-        CurrentStage::SimilarVideosCalculatingHashes => flc!("stage_calculating_video_hashes"),
-        CurrentStage::BrokenFilesChecking => flc!("stage_checking_files"),
-        CurrentStage::BadExtensionsChecking => flc!("stage_checking_extensions"),
-        CurrentStage::BadNamesChecking => flc!("stage_checking_names"),
-        CurrentStage::SameMusicReadingTags => flc!("stage_reading_music_tags"),
-        CurrentStage::SameMusicComparingTags => flc!("stage_comparing_tags"),
-        CurrentStage::SameMusicCalculatingFingerprints => flc!("stage_calculating_music_fingerprints"),
-        CurrentStage::SameMusicComparingFingerprints => flc!("stage_comparing_fingerprints"),
-        CurrentStage::ExifRemoverExtractingTags => flc!("stage_extracting_exif"),
-        CurrentStage::VideoOptimizerCreatingThumbnails | CurrentStage::SimilarVideosCreatingThumbnails => flc!("stage_creating_video_thumbnails"),
-        CurrentStage::VideoOptimizerProcessingVideos => flc!("stage_processing_videos"),
-        CurrentStage::DeletingFiles => flc!("stage_deleting"),
-        CurrentStage::RenamingFiles => flc!("stage_renaming"),
-        CurrentStage::MovingFiles => flc!("stage_moving"),
-        CurrentStage::HardlinkingFiles => flc!("stage_hardlinking"),
-        CurrentStage::SymlinkingFiles => flc!("stage_symlinking"),
-        CurrentStage::OptimizingVideos => flc!("stage_optimizing_videos"),
-        CurrentStage::CleaningExif => flc!("stage_cleaning_exif"),
-        CurrentStage::DuplicateHidingHardLinks | CurrentStage::SimilarImagesHidingHardLinks | CurrentStage::SimilarVideosHidingHardLinks => flc!("stage_all_hiding_links"),
-    }
-}
-
-fn stage_label_full(pd: &CoreProgress) -> String {
-    let base = stage_label(pd.sstage);
-    let label = if stage_uses_bytes(pd.sstage) && pd.bytes_to_check > 0 {
-        format!("{base}  ({} / {})", fmt_size(pd.bytes_checked), fmt_size(pd.bytes_to_check))
-    } else {
-        base
-    };
-    if pd.max_stage_idx > 0 {
-        format!("{}/{}  {label}", pd.current_stage_idx + 1, pd.max_stage_idx + 1)
-    } else {
-        label
     }
 }
 
@@ -405,12 +389,11 @@ pub(crate) fn spawn_progress_forwarder<H: ScanResultHandler + Sync>(handler: Arc
     let (ptx, prx) = unbounded::<CoreProgress>();
     let handle = thread::spawn(move || {
         while let Ok(pd) = prx.recv() {
-            let is_indeterminate = pd.sstage.check_if_loading_saving_cache();
+            let display = pd.to_display();
             let update = ProgressUpdate {
-                step_name: stage_label_full(&pd),
-                current: pd.entries_checked as i32,
-                all: pd.entries_to_check as i32,
-                is_indeterminate,
+                step_name: display.label,
+                all_progress: display.all_progress.max(0),
+                is_indeterminate: display.current_progress.is_none(),
                 scan_id,
             };
             handler.on_result(ScanResult::Progress(update));
@@ -424,41 +407,9 @@ pub(crate) fn fmt_size(bytes: u64) -> String {
 }
 
 pub(crate) fn fmt_date(unix_secs: u64) -> String {
-    let secs = unix_secs;
-    let mins = secs / 60;
-    let hours = mins / 60;
-    let days = hours / 24;
-
-    let min = mins % 60;
-    let hour = hours % 24;
-
-    let mut remaining_days = days;
-    let mut year = 1970u64;
-    loop {
-        let days_in_year = if year.is_multiple_of(4) && (!year.is_multiple_of(100) || year.is_multiple_of(400)) {
-            366
-        } else {
-            365
-        };
-        if remaining_days < days_in_year {
-            break;
-        }
-        remaining_days -= days_in_year;
-        year += 1;
-    }
-    let leap = year.is_multiple_of(4) && (!year.is_multiple_of(100) || year.is_multiple_of(400));
-    let months_days: [u64; 12] = [31, if leap { 29 } else { 28 }, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    let mut month = 1u64;
-    for &md in &months_days {
-        if remaining_days < md {
-            break;
-        }
-        remaining_days -= md;
-        month += 1;
-    }
-    let day = remaining_days + 1;
-
-    format!("{year}-{month:02}-{day:02} {hour:02}:{min:02}")
+    use chrono::{Local, TimeZone, Utc};
+    let dt_local = Utc.timestamp_opt(unix_secs as i64, 0).single().unwrap_or_default().with_timezone(&Local);
+    dt_local.format("%Y-%m-%d %H:%M").to_string()
 }
 
 pub(crate) fn size_to_hi_lo(size: u64) -> (i32, i32) {

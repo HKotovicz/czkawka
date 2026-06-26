@@ -15,9 +15,9 @@ use rayon::prelude::*;
 use crate::common::cache::{CACHE_VERSION, load_and_split_cache_generalized_by_path, save_and_connect_cache_generalized_by_path};
 use crate::common::dir_traversal::{DirTraversalBuilder, DirTraversalResult};
 use crate::common::model::{ToolType, WorkContinueStatus};
-use crate::common::progress_data::{CurrentStage, ProgressData};
+use crate::common::progress_data::{CacheLoadPhase, ExifRemoverStage, ProgressData, ToolStage};
 use crate::common::progress_stop_handler::{check_if_stop_received, prepare_thread_handler_common};
-use crate::common::tool_data::{CommonData, CommonToolData};
+use crate::common::tool_data::CommonToolData;
 use crate::flc;
 use crate::tools::exif_remover::{ExifEntry, ExifRemover, ExifRemoverParameters, ExifTagInfo, ExifTagsFixerParams, Info};
 
@@ -93,7 +93,7 @@ impl ExifRemover {
         _stop_flag: &Arc<AtomicBool>,
         progress_sender: Option<&Sender<ProgressData>>,
     ) -> (BTreeMap<String, ExifEntry>, BTreeMap<String, ExifEntry>, BTreeMap<String, ExifEntry>) {
-        let progress_handler = prepare_thread_handler_common(progress_sender, CurrentStage::ExifRemoverCacheLoading, 0, self.get_test_type(), 0);
+        let progress_handler = prepare_thread_handler_common(progress_sender, ToolStage::ExifRemover(ExifRemoverStage::LoadingCache(CacheLoadPhase::Loading)), 0, 0);
         let res = load_and_split_cache_generalized_by_path(&get_exif_remover_cache_file(), mem::take(&mut self.files_to_check), self);
 
         progress_handler.join_thread();
@@ -108,7 +108,7 @@ impl ExifRemover {
         _stop_flag: &Arc<AtomicBool>,
         progress_sender: Option<&Sender<ProgressData>>,
     ) {
-        let progress_handler = prepare_thread_handler_common(progress_sender, CurrentStage::ExifRemoverCacheSaving, 0, self.get_test_type(), 0);
+        let progress_handler = prepare_thread_handler_common(progress_sender, ToolStage::ExifRemover(ExifRemoverStage::SavingCache), 0, 0);
 
         save_and_connect_cache_generalized_by_path(&get_exif_remover_cache_file(), vec_file_entry, loaded_hash_map, self);
 
@@ -125,9 +125,8 @@ impl ExifRemover {
 
         let progress_handler = prepare_thread_handler_common(
             progress_sender,
-            CurrentStage::ExifRemoverExtractingTags,
+            ToolStage::ExifRemover(ExifRemoverStage::ExtractingTags),
             non_cached_files_to_check.len(),
-            self.get_test_type(),
             non_cached_files_to_check.values().map(|item| item.size).sum::<u64>(),
         );
 
@@ -228,7 +227,7 @@ pub fn clean_exif_tags(file_path: &str, tags_to_remove: &[(u16, String)], overri
         let metadata = Metadata::new_from_vec(&file_data, ext).map_err(|e| format!("Failed to read EXIF: {e}"))?;
 
         let mut new_metadata = metadata;
-        let mut tags_removed: u32 = 0;
+        let tags_before = (&new_metadata).into_iter().count();
         for (tag_u16, tag_group) in tags_to_remove {
             let Ok(tag_group) = string_to_exif_tag_group(tag_group) else {
                 error!("Unknown EXIF tag group string: {tag_group}, skipping tag removal.");
@@ -236,8 +235,9 @@ pub fn clean_exif_tags(file_path: &str, tags_to_remove: &[(u16, String)], overri
             };
 
             new_metadata.remove_tag_by_hex_group(*tag_u16, tag_group);
-            tags_removed += 1;
         }
+        let tags_after = (&new_metadata).into_iter().count();
+        let tags_removed = tags_before.saturating_sub(tags_after) as u32;
 
         new_metadata.write_to_vec(&mut file_data, ext).map_err(|e| e.to_string())?;
         if override_file {
@@ -312,31 +312,6 @@ pub fn string_to_file_extension(s: &str) -> FileExtension {
         } // Default to JPEG
     }
 }
-
-// Nom-exif implementation
-// Probably will use this version in future
-// fn extract_exif_tags2(path: &Path) -> Result<Vec<String>, String> {
-//     let res = panic::catch_unwind(|| {
-//         let mut parser = nom_exif::MediaParser::new();
-//         let ms = nom_exif::MediaSource::file_path(path).map_err(|e| format!("Failed to open file: {e}"))?;
-//         let mut results = Vec::new();
-//         if !ms.has_exif() {
-//             return Ok(results);
-//         }
-//         let exif_iter: nom_exif::ExifIter = parser.parse(ms).map_err(|e| format!("Failed to parse EXIF data: {e}"))?;
-//         for exif_entry in exif_iter {
-//             results.push(exif_entry.tag().map_or_else(|| "Unknown".to_string(), |t| format!("{t:?}")));
-//         }
-//
-//         Ok(results)
-//     });
-//
-//     res.unwrap_or_else(|_| {
-//         let message = crate::common::create_crash_message("nom-exif", path.to_string_lossy().as_ref(), "https://github.com/mindeng/nom-exif");
-//         error!("{message}");
-//         Err("Panic in get_rotation_from_exif".to_string())
-//     })
-// }
 
 pub fn string_to_exif_tag_group(tag: &str) -> Result<ExifTagGroup, String> {
     match tag {

@@ -1,45 +1,71 @@
 use std::fs::File;
 use std::io;
+use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 
-use symphonia::core::codecs::CODEC_TYPE_NULL;
+use symphonia::core::codecs::CodecParameters;
+use symphonia::core::codecs::audio::AudioDecoderOptions;
 use symphonia::core::errors::Error;
 use symphonia::core::errors::Error::IoError;
 use symphonia::core::io::MediaSourceStream;
 
-pub fn parse_audio_file(file_handler: File) -> Result<(), Error> {
+use crate::common::progress_stop_handler::check_if_stop_received;
+
+#[derive(Debug)]
+pub enum AudioCheckError {
+    UnsupportedCodec,
+    Other(String),
+}
+
+impl AudioCheckError {
+    fn other(err: &Error) -> Self {
+        Self::Other(err.to_string())
+    }
+}
+
+pub fn parse_audio_file(file_handler: File, stop_flag: &Arc<AtomicBool>) -> Result<Option<()>, AudioCheckError> {
     let mss = MediaSourceStream::new(Box::new(file_handler), Default::default());
 
-    let Ok(probed) = symphonia::default::get_probe().format(&Default::default(), mss, &Default::default(), &Default::default()) else {
-        return Err(Error::Unsupported("probe info not available/file not recognized"));
+    let Ok(mut format) = symphonia::default::get_probe().probe(&Default::default(), mss, Default::default(), Default::default()) else {
+        return Err(AudioCheckError::Other("probe info not available/file not recognized".to_string()));
     };
 
-    let mut format = probed.format;
-
-    let Some(track) = format.tracks().iter().find(|t| t.codec_params.codec != CODEC_TYPE_NULL) else {
-        return Err(Error::Unsupported("not supported audio track"));
+    let Some(track) = format.tracks().iter().find(|t| matches!(t.codec_params.as_ref(), Some(CodecParameters::Audio(_)))) else {
+        return Err(AudioCheckError::Other("not supported audio track".to_string()));
     };
 
-    let Ok(mut decoder) = symphonia::default::get_codecs().make(&track.codec_params, &Default::default()) else {
-        return Err(Error::Unsupported("not supported codec"));
+    let audio_params = match track.codec_params.as_ref() {
+        Some(CodecParameters::Audio(p)) => p.clone(),
+        _ => unreachable!(),
+    };
+
+    let Ok(mut decoder) = symphonia::default::get_codecs().make_audio_decoder(&audio_params, &AudioDecoderOptions::default()) else {
+        return Err(AudioCheckError::UnsupportedCodec);
     };
 
     loop {
+        if check_if_stop_received(stop_flag) {
+            return Ok(None);
+        }
+
         let packet = match format.next_packet() {
-            Ok(packet) => packet,
-            Err(Error::ResetRequired) => {
-                return Err(Error::ResetRequired);
+            Ok(Some(p)) => p,
+            Ok(None) => return Ok(Some(())),
+            Err(err @ Error::ResetRequired) => {
+                return Err(AudioCheckError::other(&err));
             }
             Err(err) => {
-                if let IoError(ref er) = err {
-                    // Catch eof, not sure how to do it properly
-                    if er.kind() == io::ErrorKind::UnexpectedEof {
-                        return Ok(());
-                    }
+                if let IoError(ref er) = err
+                    && er.kind() == io::ErrorKind::UnexpectedEof
+                {
+                    return Ok(Some(()));
                 }
-                return Err(err);
+                return Err(AudioCheckError::other(&err));
             }
         };
 
-        decoder.decode(&packet)?;
+        if let Err(err) = decoder.decode(&packet) {
+            return Err(AudioCheckError::other(&err));
+        }
     }
 }

@@ -130,6 +130,7 @@ pub(super) fn build_custom_select_columns(active_tab: ActiveTab) -> Vec<CustomSe
             col_full_path!(&full_path),
             col_str!(&file_name, StrDataTemporaryFiles::Name),
             col_str!(&path, StrDataTemporaryFiles::Path),
+            col_int_pair!(format!("{} [KB]", size), IntDataTemporaryFiles::SizePart1),
             col_date!(&mod_date, IntDataTemporaryFiles::ModificationDatePart1),
         ],
         ActiveTab::SimilarImages => vec![
@@ -451,7 +452,7 @@ mod tests {
             checked: false,
             filled_header_row: false,
             header_row: false,
-            selected_row: false,
+            focused_row: false,
             val_str: ModelRc::new(VecModel::from(val_str.iter().map(|s| SharedString::from(*s)).collect::<Vec<_>>())),
             val_int: ModelRc::new(VecModel::from(val_int.to_vec())),
         }
@@ -481,7 +482,7 @@ mod tests {
             checked: false,
             filled_header_row: false,
             header_row: false,
-            selected_row: false,
+            focused_row: false,
             val_str: ModelRc::new(VecModel::from(val_str.to_vec())),
             val_int: ModelRc::new(VecModel::from(val_int.to_vec())),
         }

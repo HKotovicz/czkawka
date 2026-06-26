@@ -13,6 +13,7 @@ tool_bad_extensions = Bad Extensions
 tool_same_music = Music Duplicates
 tool_bad_names = Bad Names
 tool_exif_remover = EXIF Data
+tool_similar_videos = Similar Videos (Audio)
 tool_directories = Directories
 tool_settings = Settings
 
@@ -28,6 +29,7 @@ home_bad_extensions_description = Files with invalid extension
 home_same_music_description = Similar audio files by tags
 home_bad_names_description = Files with problematic characters in name
 home_exif_description = Images with EXIF metadata
+home_similar_videos_description = Find videos with similar audio (no FFmpeg needed)
 
 # Results list
 scanning = Scanning in progress...
@@ -123,6 +125,7 @@ settings_hash_size = Hash size
 settings_hash_size_desc = Larger sizes, have less false positives, but also finds less similar images
 settings_hash_alg = Hash algorithm
 settings_image_filter = Resize filter
+settings_geometric_invariance = Geometric invariance
 settings_ignore_same_size = Ignore images with the same dimensions
 settings_gallery_image_fit_cover = Gallery: crop to square
 settings_gallery_image_fit_cover_desc = Fill the tile; disable to keep original aspect ratio
@@ -150,6 +153,11 @@ settings_broken_audio = Audio
 settings_broken_pdf = PDF
 settings_broken_archive = Archive
 settings_broken_image = Image
+settings_broken_font = Font
+settings_broken_markup = Markup (JSON/XML/TOML)
+settings_similar_videos_header = SIMILAR VIDEOS (AUDIO)
+settings_similar_videos_audio_preset = Audio similarity preset
+settings_similar_videos_audio_preset_desc = Controls how strictly audio must match
 settings_bad_names_header = BAD NAMES
 settings_bad_names_checks_label = CHECKS
 settings_bad_names_uppercase_ext = Uppercase extension
@@ -173,6 +181,11 @@ diagnostics_clear_thumbnails = Clear thumbnails
 diagnostics_open_thumbnails_folder = Open folder
 diagnostics_clear_cache = Clear cache
 diagnostics_open_cache_folder = Open folder
+diagnostics_export_logs = Export logs
+logs_label = LOGS
+logs_export_title = Export logs
+logs_export_saved = Logs copied to:
+logs_export_failed = Could not export logs
 diagnostics_collect_test = File access test
 diagnostics_collect_test_desc = Check how many files are accessible
 diagnostics_collect_test_run = Run
@@ -230,6 +243,8 @@ renamed_errors_suffix = errors
 cleaned_exif_prefix = Cleaned EXIF from
 cleaned_exif_suffix = files
 cleaned_exif_errors_suffix = errors
+rename_error_read_file_name = Cannot read file name
+rename_error_read_directory = Cannot read directory
 and_more_prefix = ...and
 and_more_suffix = more
 
@@ -239,7 +254,6 @@ gallery_back = Back
 gallery_confirm_delete = Yes, delete
 deleting_files = Deleting files...
 stop = Stop
-files_suffix = files
 scanning_fallback = Scanning...
 app_subtitle = In honour of the Battle of Cedynia (972 CE)
 app_license = Frontend for Czkawka Core - GPL-3.0
@@ -259,40 +273,11 @@ gallery_confirm_delete_warning = All items are selected in { $unsafe_groups } gr
 same_music_fingerprint_warning = Calculating and comparing audio fingerprints is very resource-intensive and may take a long time. It is recommended to use Krokiet on a desktop system for this task.
 
 # Scan stage labels (shown during scan progress)
-stage_collecting_files = Collecting files
-stage_scanning_name = Scanning by name
-stage_scanning_size_name = Scanning by name and size
-stage_scanning_size = Scanning by size
-stage_pre_hash = Pre-hashing
-stage_full_hash = Hashing
-stage_loading_cache = Loading cache
-stage_saving_cache = Saving cache
-stage_calculating_image_hashes = Calculating image hashes
-stage_comparing_images = Comparing images
-stage_calculating_video_hashes = Calculating video hashes
-stage_checking_files = Checking files
-stage_checking_extensions = Checking extensions
-stage_checking_names = Checking names
-stage_reading_music_tags = Reading music tags
-stage_comparing_tags = Comparing tags
-stage_calculating_music_fingerprints = Calculating music fingerprints
-stage_comparing_fingerprints = Comparing fingerprints
-stage_extracting_exif = Reading EXIF tags
-stage_creating_video_thumbnails = Creating video thumbnails
-stage_processing_videos = Processing videos
-stage_deleting = Deleting files
-stage_renaming = Renaming files
-stage_moving = Moving files
-stage_hardlinking = Creating hard links
-stage_symlinking = Creating symlinks
-stage_optimizing_videos = Optimizing videos
-stage_cleaning_exif = Cleaning EXIF
-stage_all_hiding_links = Hiding hard links
-
 # Group headers in scan results
 duplicates_group_header = { $count } files  x  { $per_file } / file  =  { $total } total
 similar_images_group_header = { $count } similar images
 same_music_group_header = { $count } similar tracks
+similar_videos_group_header = { $count } similar videos
 
 # Rename confirmation
 confirm_rename_items = Are you sure you want to rename { $n } selected files?
@@ -314,6 +299,9 @@ option_music_method_tags = Tags
 option_music_method_audio = Audio
 option_min_size_none = None
 option_max_size_unlimited = Unlimited
+option_audio_preset_identical = Identical
+option_audio_preset_clip = Clip in longer
+option_audio_preset_similar = Similar
 
 # Volume labels (shown in the directories screen)
 volume_internal_storage = Internal Storage
@@ -340,7 +328,7 @@ path_edit_placeholder = Enter path...
 path_edit_not_exists = Path does not exist
 path_edit_is_dir = Directory
 path_edit_is_file = File
-path_edit_no_newlines = Paths cannot contain newlines — Enter key is not allowed
+path_edit_no_newlines = Paths cannot contain newlines - Enter key is not allowed
 
 ctx_menu_title = Open
 ctx_open_file = Open item
@@ -356,5 +344,5 @@ compare_mode_normal = Side
 compare_mode_split = Split
 compare_mode_overlay = Overlay
 compare_mode_diff = Diff
-compare_res_mismatch = Different resolutions – diff may be inaccurate
+compare_res_mismatch = Different resolutions - diff may be inaccurate
 

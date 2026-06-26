@@ -1,33 +1,36 @@
 import { HorizontalBox, LineEdit, Palette, VerticalBox } from "std-widgets.slint";
-import { FontSizes } from "fonts.slint";
-import { LeftSidePanel } from "left_side_panel.slint";
-import { MainList } from "main_lists.slint";
-import { ActiveTab, PopupRequest, ProgressToSend, SingleMainListModel } from "common.slint";
-import { ActionButtons } from "action_buttons.slint";
-import { Progress } from "progress.slint";
-import { Settings } from "settings.slint";
-import { Callabler } from "callabler.slint";
-import { BottomPanel } from "bottom_panel.slint";
-import { GuiState } from "gui_state.slint";
-import { Preview } from "preview.slint";
-import { PopupNewDirectories } from "popup_new_directories.slint";
-import { PopupDelete } from "popup_delete.slint";
-import { PopupTrash } from "popup_trash.slint";
-import { PopupMoveFolders } from "popup_move_folders.slint";
-import { PopupSelectResults } from "popup_select_results.slint";
-import { PopupCustomSelect } from "popup_custom_select.slint";
-import { PopupRenameBadExtensions } from "popup_rename_bad_extensions.slint";
-import { PopupRenameBadFileNames } from "popup_rename_bad_file_names.slint";
-import { PopupSave } from "popup_save.slint";
-import { PopupSortResults } from "popup_sort.slint";
-import { PopupActionConfirm } from "popup_action_confirm.slint";
-import { PopupCropVideo } from "popup_crop_video.slint";
-import { PopupReencodeVideo } from "popup_optimize.slint";
-import { PopupCleanExif } from "popup_clean_exif.slint";
-import { PopupCleanCache } from "popup_clean_cache.slint";
-import { ToolSettings } from "tool_settings.slint";
-import { Translations } from "translations.slint";
-import { ImageCompareOverlay } from "image_compare.slint";
+import { FontSizes } from "globals/fonts.slint";
+import { LeftSidePanel } from "screens/left_side_panel.slint";
+import { MainList } from "screens/main_lists.slint";
+import { ActiveTab, PopupRequest, ProgressToSend, SingleMainListModel } from "globals/common.slint";
+import { ActionButtons } from "screens/action_buttons.slint";
+import { Progress } from "screens/progress.slint";
+import { Settings } from "globals/settings.slint";
+import { Callabler } from "globals/callabler.slint";
+import { BottomPanel } from "screens/bottom_panel.slint";
+import { GuiState } from "globals/gui_state.slint";
+import { Preview } from "components/preview.slint";
+import { PopupNewDirectories } from "popups/popup_new_directories.slint";
+import { PopupDelete } from "popups/popup_delete.slint";
+import { PopupTrash } from "popups/popup_trash.slint";
+import { PopupMoveFolders } from "popups/popup_move_folders.slint";
+import { PopupSelectResults } from "popups/popup_select_results.slint";
+import { PopupCustomSelect } from "popups/popup_custom_select.slint";
+import { PopupRenameBadExtensions } from "popups/popup_rename_bad_extensions.slint";
+import { PopupRenameBadFileNames } from "popups/popup_rename_bad_file_names.slint";
+import { PopupRenameFile } from "popups/popup_rename_file.slint";
+import { PopupError } from "popups/popup_error.slint";
+import { PopupSave } from "popups/popup_save.slint";
+import { PopupSortResults } from "popups/popup_sort.slint";
+import { PopupActionConfirm } from "popups/popup_action_confirm.slint";
+import { PopupCropVideo } from "popups/popup_crop_video.slint";
+import { PopupReencodeVideo } from "popups/popup_optimize.slint";
+import { PopupCleanExif } from "popups/popup_clean_exif.slint";
+import { PopupCleanCache } from "popups/popup_clean_cache.slint";
+import { PopupOtherApps } from "popups/popup_other_apps.slint";
+import { ToolSettings } from "screens/tool_settings.slint";
+import { Translations } from "globals/translations.slint";
+import { ImageCompareOverlay } from "screens/image_compare.slint";
 
 export {Settings, Callabler, GuiState, Translations, Palette}
 
@@ -47,6 +50,8 @@ export component MainWindow inherits Window {
     // Opening popup is done via Rust call
     callback request_setup_action_popup(PopupRequest); // When opening popup we need to setup data in it, Slint -> Rust
     callback show_action_popup(PopupRequest, string); // After setup, we can show popup - Rust -> Slint - string is choosed folder - to avoid having multiple callbacks, string will be empty for things that do not need it
+    callback show_rename_single_file_popup(int, string); // Single-row rename, Rust -> Slint - (row_idx, current_name) prefilled into the popup
+    callback show_error_popup(string); // Generic error message popup, Rust -> Slint
 
     title <=> Translations.main_window_title_text;
 
@@ -118,6 +123,10 @@ export component MainWindow inherits Window {
 
                         show_clean_cache_popup() => {
                             clean_cache_popup_window.show_popup();
+                        }
+
+                        show_other_apps_popup() => {
+                            other_apps_popup_window.show_popup();
                         }
                     }
 
@@ -292,6 +301,22 @@ export component MainWindow inherits Window {
         y: parent.y + (parent.height - self.popup_height) / 2.0;
     }
 
+    rename_file_popup_window := PopupRenameFile {
+        height: root.height;
+        width: root.width;
+
+        x: parent.x + (root.width - self.popup_width) / 2.0;
+        y: parent.y + (parent.height - self.popup_height) / 2.0;
+    }
+
+    error_popup_window := PopupError {
+        height: root.height;
+        width: root.width;
+
+        x: parent.x + (root.width - self.popup_width) / 2.0;
+        y: parent.y + (parent.height - self.popup_height) / 2.0;
+    }
+
     save_popup_window := PopupSave {
         height: root.height;
         width: root.width;
@@ -336,6 +361,14 @@ export component MainWindow inherits Window {
         stop_cleaning() => {
             Callabler.stop_cache_cleaning();
         }
+    }
+
+    other_apps_popup_window := PopupOtherApps {
+        height: root.height;
+        width: root.width;
+
+        x: parent.x + (root.width - self.popup_width) / 2.0;
+        y: parent.y + (parent.height - self.popup_height) / 2.0;
     }
 
     crop_video_popup_window := PopupCropVideo {
@@ -492,5 +525,13 @@ export component MainWindow inherits Window {
         } else {
             debug("Unsupported popup request");
         }
+    }
+
+    show_rename_single_file_popup(idx, current_name) => {
+        rename_file_popup_window.show_popup(idx, current_name);
+    }
+
+    show_error_popup(message) => {
+        error_popup_window.show_popup(message);
     }
 }

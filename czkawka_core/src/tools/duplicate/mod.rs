@@ -10,6 +10,7 @@ use std::fmt::Debug;
 use std::fs;
 use std::fs::File;
 use std::hash::Hasher;
+use std::io::SeekFrom;
 use std::io::prelude::*;
 #[cfg(target_family = "unix")]
 use std::os::unix::fs::MetadataExt;
@@ -114,7 +115,7 @@ impl DuplicateFinderParameters {
 pub struct DuplicateFinder {
     common_data: CommonToolData,
     information: Info,
-    // File Size, File Entry
+    // File Name, File Entry
     files_with_identical_names: BTreeMap<String, Vec<DuplicateEntry>>,
     // File (Size, Name), File Entry
     files_with_identical_size_names: BTreeMap<(u64, String), Vec<DuplicateEntry>>,
@@ -122,7 +123,7 @@ pub struct DuplicateFinder {
     files_with_identical_size: BTreeMap<u64, Vec<DuplicateEntry>>,
     // File Size, next grouped by file size, next grouped by hash
     files_with_identical_hashes: BTreeMap<u64, Vec<Vec<DuplicateEntry>>>,
-    // File Size, File Entry
+    // File Name, File Entry
     files_with_identical_names_referenced: BTreeMap<String, (DuplicateEntry, Vec<DuplicateEntry>)>,
     // File (Size, Name), File Entry
     files_with_identical_size_names_referenced: BTreeMap<(u64, String), (DuplicateEntry, Vec<DuplicateEntry>)>,
@@ -138,12 +139,10 @@ fn filter_hard_links(vec_file_entry: Vec<FileEntry>) -> Vec<FileEntry> {
     let mut inodes: IndexSet<u128> = IndexSet::with_capacity(vec_file_entry.len());
     let mut identical: Vec<FileEntry> = Vec::with_capacity(vec_file_entry.len());
     for f in vec_file_entry {
-        if let Ok(meta) = file_id::get_high_res_file_id(&f.path) {
-            if let file_id::FileId::HighRes { file_id, .. } = meta {
-                if !inodes.insert(file_id) {
-                    continue;
-                }
-            }
+        if let Ok(file_id::FileId::HighRes { file_id, .. }) = file_id::get_high_res_file_id(&f.path)
+            && !inodes.insert(file_id)
+        {
+            continue;
         }
         identical.push(f);
     }
@@ -221,15 +220,14 @@ impl DuplicateFinder {
 }
 
 pub(crate) fn hash_calculation_limit(buffer: &mut [u8], file_entry: &DuplicateEntry, hash_type: HashType, limit: u64, size_counter: &Arc<AtomicU64>) -> Result<String, String> {
-    // This function is used only to calculate hash of file with limit
-    // We must ensure that buffer is big enough to store all data
-    // We don't need to check that each time
-    const_assert!(PREHASHING_BUFFER_SIZE <= THREAD_BUFFER_SIZE as u64);
+    // Reads up to `limit` bytes from the start and up to `limit` from the end into one hasher.
+    // When the head and tail would overlap (size <= 2*limit) the whole file is read in a single pass.
+    const_assert!(PREHASHING_BUFFER_SIZE * 2 <= THREAD_BUFFER_SIZE as u64);
 
     let mut file_handler = match File::open(&file_entry.path) {
         Ok(t) => t,
         Err(e) => {
-            size_counter.fetch_add(limit, Ordering::Relaxed);
+            size_counter.fetch_add(file_entry.size.min(2 * limit), Ordering::Relaxed);
             return Err(flc!(
                 "core_unable_check_hash_of_file",
                 file = file_entry.path.to_string_lossy().to_string(),
@@ -238,16 +236,62 @@ pub(crate) fn hash_calculation_limit(buffer: &mut [u8], file_entry: &DuplicateEn
         }
     };
     let hasher = &mut *hash_type.hasher();
-    #[expect(clippy::indexing_slicing)] // Safe, because limit is always <= buffer size
-    let n = match file_handler.read(&mut buffer[..limit as usize]) {
-        Ok(t) => t,
-        Err(e) => return Err(flc!("core_error_checking_hash_of_file", file = file_entry.path.to_string_lossy(), reason = e.to_string())),
-    };
 
-    #[expect(clippy::indexing_slicing)] // Safe, because we read only n bytes, which is always <= limit <= buffer size
-    hasher.update(&buffer[..n]);
-    size_counter.fetch_add(n as u64, Ordering::Relaxed);
+    if file_entry.size <= 2 * limit {
+        // Head and tail would overlap - read the whole file in a single pass.
+        #[expect(clippy::indexing_slicing)] // Safe: size <= 2 * limit <= buffer size
+        let n = match read_filling(&mut file_handler, &mut buffer[..file_entry.size as usize]) {
+            Ok(t) => t,
+            Err(e) => return Err(flc!("core_error_checking_hash_of_file", file = file_entry.path.to_string_lossy(), reason = e.to_string())),
+        };
+        #[expect(clippy::indexing_slicing)] // Safe: n <= size <= buffer size
+        hasher.update(&buffer[..n]);
+        size_counter.fetch_add(n as u64, Ordering::Relaxed);
+    } else {
+        // Read first `limit` bytes from the start of the file
+        #[expect(clippy::indexing_slicing)] // Safe: limit <= PREHASHING_BUFFER_SIZE <= buffer size / 2
+        let n = match read_filling(&mut file_handler, &mut buffer[..limit as usize]) {
+            Ok(t) => t,
+            Err(e) => return Err(flc!("core_error_checking_hash_of_file", file = file_entry.path.to_string_lossy(), reason = e.to_string())),
+        };
+        #[expect(clippy::indexing_slicing)] // Safe: n <= limit <= buffer size / 2
+        hasher.update(&buffer[..n]);
+        size_counter.fetch_add(n as u64, Ordering::Relaxed);
+
+        // Read the last `limit` bytes from the end of the file
+        let tail_offset = file_entry.size - limit;
+        if let Err(e) = file_handler.seek(SeekFrom::Start(tail_offset)) {
+            return Err(flc!("core_error_checking_hash_of_file", file = file_entry.path.to_string_lossy(), reason = e.to_string()));
+        }
+        #[expect(clippy::indexing_slicing)] // Safe: limit * 2 <= THREAD_BUFFER_SIZE <= buffer size
+        let n2 = match read_filling(&mut file_handler, &mut buffer[limit as usize..limit as usize * 2]) {
+            Ok(t) => t,
+            Err(e) => return Err(flc!("core_error_checking_hash_of_file", file = file_entry.path.to_string_lossy(), reason = e.to_string())),
+        };
+        #[expect(clippy::indexing_slicing)] // Safe: n2 <= limit, offset limit <= buffer size / 2
+        hasher.update(&buffer[limit as usize..limit as usize + n2]);
+        size_counter.fetch_add(n2 as u64, Ordering::Relaxed);
+    }
+
     Ok(hasher.finalize())
+}
+
+// Repeatedly calls Read::read until `buf` is full or EOF is reached.
+// `Read::read` is allowed to return short reads, so a single call can
+// hash fewer bytes than expected and produce a different hash on the
+// next run for the same file. This wrapper guarantees a stable prehash.
+fn read_filling(reader: &mut impl Read, buf: &mut [u8]) -> std::io::Result<usize> {
+    let mut total = 0;
+    while total < buf.len() {
+        #[expect(clippy::indexing_slicing)] // Safe: total < buf.len()
+        match reader.read(&mut buf[total..]) {
+            Ok(0) => break,
+            Ok(n) => total += n,
+            Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
+            Err(e) => return Err(e),
+        }
+    }
+    Ok(total)
 }
 
 pub fn hash_calculation(
@@ -371,23 +415,110 @@ mod tests2 {
     #[test]
     fn test_hash_calculation_limit() -> io::Result<()> {
         let dir = tempfile::Builder::new().tempdir()?;
-        let mut buf = [0u8; 1000];
+        let mut buf = vec![0u8; (PREHASHING_BUFFER_SIZE * 2) as usize];
         let src = dir.path().join("a");
-        let mut file = File::create(&src)?;
-        file.write_all(b"aa")?;
-        let e = DuplicateEntry { path: src, ..Default::default() };
+        File::create(&src)?.write_all(b"hello world")?;
+        // size <= 2*limit for both limits, so the whole file is read in one pass regardless of limit.
+        let e = DuplicateEntry {
+            path: src,
+            size: 11,
+            ..Default::default()
+        };
         let size_counter_1 = Arc::new(AtomicU64::new(0));
         let size_counter_2 = Arc::new(AtomicU64::new(0));
-        let size_counter_3 = Arc::new(AtomicU64::new(0));
-        let r1 = hash_calculation_limit(&mut buf, &e, HashType::Blake3, 1, &size_counter_1).expect("hash_calculation failed");
-        let r2 = hash_calculation_limit(&mut buf, &e, HashType::Blake3, 2, &size_counter_2).expect("hash_calculation failed");
-        let r3 = hash_calculation_limit(&mut buf, &e, HashType::Blake3, 1000, &size_counter_3).expect("hash_calculation failed");
-        assert_ne!(r1, r2);
-        assert_eq!(r2, r3);
+        let r1 = hash_calculation_limit(&mut buf, &e, HashType::Blake3, 100, &size_counter_1).expect("hash_calculation failed");
+        let r2 = hash_calculation_limit(&mut buf, &e, HashType::Blake3, PREHASHING_BUFFER_SIZE, &size_counter_2).expect("hash_calculation failed");
+        assert_eq!(r1, r2);
 
-        assert_eq!(1, size_counter_1.load(Ordering::Relaxed));
-        assert_eq!(2, size_counter_2.load(Ordering::Relaxed));
-        assert_eq!(2, size_counter_3.load(Ordering::Relaxed));
+        assert_eq!(11, size_counter_1.load(Ordering::Relaxed));
+        assert_eq!(11, size_counter_2.load(Ordering::Relaxed));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_hash_calculation_limit_tail_read() -> io::Result<()> {
+        let dir = tempfile::Builder::new().tempdir()?;
+        let mut buf = vec![0u8; (PREHASHING_BUFFER_SIZE * 2) as usize];
+
+        // File larger than 2*limit, so head and tail are read separately (gap in the middle).
+        let file_size = 2 * PREHASHING_BUFFER_SIZE + 100;
+
+        // File A: all zeros.
+        let src_a = dir.path().join("a");
+        let content_a = vec![0u8; file_size as usize];
+        File::create(&src_a)?.write_all(&content_a)?;
+
+        // File B: identical to A except the very last byte differs.
+        let src_b = dir.path().join("b");
+        let mut content_b = content_a;
+        content_b[file_size as usize - 1] = 1;
+        File::create(&src_b)?.write_all(&content_b)?;
+
+        let e_a = DuplicateEntry {
+            path: src_a,
+            size: file_size,
+            ..Default::default()
+        };
+        let e_b = DuplicateEntry {
+            path: src_b,
+            size: file_size,
+            ..Default::default()
+        };
+        let counter_a = Arc::new(AtomicU64::new(0));
+        let counter_b = Arc::new(AtomicU64::new(0));
+
+        let hash_a = hash_calculation_limit(&mut buf, &e_a, HashType::Blake3, PREHASHING_BUFFER_SIZE, &counter_a).expect("hash_a failed");
+        let hash_b = hash_calculation_limit(&mut buf, &e_b, HashType::Blake3, PREHASHING_BUFFER_SIZE, &counter_b).expect("hash_b failed");
+
+        // Hashes must differ: the tail chunk covers the differing last byte.
+        assert_ne!(hash_a, hash_b);
+        // Each file caused two reads of PREHASHING_BUFFER_SIZE bytes (head + tail).
+        assert_eq!(counter_a.load(Ordering::Relaxed), 2 * PREHASHING_BUFFER_SIZE);
+        assert_eq!(counter_b.load(Ordering::Relaxed), 2 * PREHASHING_BUFFER_SIZE);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_hash_calculation_limit_overlap_read_whole_file() -> io::Result<()> {
+        let dir = tempfile::Builder::new().tempdir()?;
+        let mut buf = vec![0u8; (PREHASHING_BUFFER_SIZE * 2) as usize];
+
+        // File between limit and 2*limit: the head and tail would overlap, so it is read whole in one pass.
+        let file_size = PREHASHING_BUFFER_SIZE + 1;
+
+        // Two files differing only in a middle byte that a head+tail read would have skipped.
+        let src_a = dir.path().join("a");
+        let content_a = vec![0u8; file_size as usize];
+        File::create(&src_a)?.write_all(&content_a)?;
+
+        let src_b = dir.path().join("b");
+        let mut content_b = content_a;
+        content_b[(file_size / 2) as usize] = 1;
+        File::create(&src_b)?.write_all(&content_b)?;
+
+        let e_a = DuplicateEntry {
+            path: src_a,
+            size: file_size,
+            ..Default::default()
+        };
+        let e_b = DuplicateEntry {
+            path: src_b,
+            size: file_size,
+            ..Default::default()
+        };
+        let counter_a = Arc::new(AtomicU64::new(0));
+        let counter_b = Arc::new(AtomicU64::new(0));
+
+        let hash_a = hash_calculation_limit(&mut buf, &e_a, HashType::Blake3, PREHASHING_BUFFER_SIZE, &counter_a).expect("hash_a failed");
+        let hash_b = hash_calculation_limit(&mut buf, &e_b, HashType::Blake3, PREHASHING_BUFFER_SIZE, &counter_b).expect("hash_b failed");
+
+        // The middle byte is covered because the whole file is read, so the hashes differ.
+        assert_ne!(hash_a, hash_b);
+        // Only the file's actual bytes are read once - no double-counted overlap.
+        assert_eq!(counter_a.load(Ordering::Relaxed), file_size);
+        assert_eq!(counter_b.load(Ordering::Relaxed), file_size);
 
         Ok(())
     }

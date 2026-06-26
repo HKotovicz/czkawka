@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
-use czkawka_core::common::progress_data::{CurrentStage, ProgressData};
+use czkawka_core::common::progress_data::{ProgressData, ToolStage};
 use czkawka_core::helpers::delayed_sender::DelayedSender;
 use czkawka_core::helpers::messages::{MessageLimit, Messages};
 use log::{debug, error};
@@ -60,15 +60,16 @@ impl MessageType {
         }
     }
     fn get_base_progress(self) -> ProgressData {
-        match self {
-            Self::Delete => ProgressData::get_empty_state(CurrentStage::DeletingFiles),
-            Self::Rename => ProgressData::get_empty_state(CurrentStage::RenamingFiles),
-            Self::Move => ProgressData::get_empty_state(CurrentStage::MovingFiles),
-            Self::Hardlink => ProgressData::get_empty_state(CurrentStage::HardlinkingFiles),
-            Self::Symlink => ProgressData::get_empty_state(CurrentStage::SymlinkingFiles),
-            Self::OptimizeVideo => ProgressData::get_empty_state(CurrentStage::OptimizingVideos),
-            Self::CleanExif => ProgressData::get_empty_state(CurrentStage::CleaningExif),
-        }
+        let stage = match self {
+            Self::Delete => ToolStage::DeletingFiles,
+            Self::Rename => ToolStage::RenamingFiles,
+            Self::Move => ToolStage::MovingFiles,
+            Self::Hardlink => ToolStage::HardlinkingFiles,
+            Self::Symlink => ToolStage::SymlinkingFiles,
+            Self::OptimizeVideo => ToolStage::OptimizingVideos,
+            Self::CleanExif => ToolStage::CleaningExif,
+        };
+        ProgressData::new(stage, 0, 0)
     }
     fn msg_type(self) -> &'static str {
         match self {
@@ -351,7 +352,7 @@ impl ModelProcessor {
                 let mut new_model_after_removing_useless_items = self.remove_single_items_in_groups(new_simple_model.to_vec_model());
                 // Selection cache was invalidated, so we need to reset it
                 for e in &mut new_model_after_removing_useless_items {
-                    e.selected_row = false;
+                    e.focused_row = false;
                 }
                 let checked_items = new_model_after_removing_useless_items.iter().filter(|e| e.checked).count();
                 self.active_tab.set_tool_model(&app, ModelRc::new(VecModel::from(new_model_after_removing_useless_items)));

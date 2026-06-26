@@ -8,9 +8,10 @@ use czkawka_core::helpers::messages::{MessageLimit, Messages};
 use czkawka_core::re_exported::HashAlg;
 use czkawka_core::tools::duplicate::DuplicateEntry;
 use czkawka_core::tools::duplicate::core::get_duplicate_cache_file;
+use czkawka_core::tools::similar_images::GeometricInvariance;
 use czkawka_core::tools::similar_images::core::get_similar_images_cache_file;
 use czkawka_core::tools::similar_videos::core::get_similar_videos_cache_file;
-use czkawka_core::tools::similar_videos::{DEFAULT_CROP_DETECT, DEFAULT_SKIP_FORWARD_AMOUNT, DEFAULT_VID_HASH_DURATION};
+use czkawka_core::tools::similar_videos::{DEFAULT_CROP_DETECT, DEFAULT_SKIP_FORWARD_AMOUNT, DEFAULT_VID_HASH_DURATION, DEFAULT_WINDOW_COUNT};
 use gtk4::prelude::*;
 use gtk4::{Label, ResponseType, Window};
 use image::imageops::FilterType;
@@ -128,7 +129,7 @@ pub(crate) fn connect_settings(gui_data: &GuiData) {
                         for use_prehash in [true, false] {
                             for type_of_hash in [HashType::Xxh3, HashType::Blake3, HashType::Crc32] {
                                 let file_name = get_duplicate_cache_file(type_of_hash, use_prehash);
-                                let (mut messages, loaded_items) = load_cache_from_file_generalized_by_size::<DuplicateEntry>(&file_name, true, &Default::default());
+                                let (mut cache_messages, loaded_items) = load_cache_from_file_generalized_by_size::<DuplicateEntry>(&file_name, true, &Default::default());
 
                                 if let Some(cache_entries) = loaded_items {
                                     let mut hashmap_to_save: BTreeMap<String, DuplicateEntry> = Default::default();
@@ -141,13 +142,14 @@ pub(crate) fn connect_settings(gui_data: &GuiData) {
                                     let minimal_cache_size = entry_settings_cache_file_minimal_size.text().as_str().parse::<u64>().unwrap_or(2 * 1024 * 1024);
 
                                     let save_messages = save_cache_to_file_generalized(&file_name, &hashmap_to_save, false, minimal_cache_size);
-                                    messages.extend_with_another_messages(save_messages);
+                                    cache_messages.extend_with_another_messages(save_messages);
                                 }
+                                messages.extend_with_another_messages(cache_messages);
                             }
-
-                            messages.messages.push(flg!("cache_properly_cleared"));
-                            text_view_errors.buffer().set_text(messages.create_messages_text(MessageLimit::NoLimit).as_str());
                         }
+
+                        messages.messages.push(flg!("cache_properly_cleared"));
+                        text_view_errors.buffer().set_text(messages.create_messages_text(MessageLimit::NoLimit).as_str());
                     }
                     dialog.close();
                 });
@@ -183,13 +185,16 @@ pub(crate) fn connect_settings(gui_data: &GuiData) {
                                     HashAlg::Mean,
                                     HashAlg::Median,
                                 ] {
-                                    let file_name = get_similar_images_cache_file(hash_size, hash_alg, image_filter);
-                                    let (mut messages, loaded_items) =
-                                        load_cache_from_file_generalized_by_path::<czkawka_core::tools::similar_images::ImagesEntry>(&file_name, true, &Default::default());
+                                    for geometric_invariance in [GeometricInvariance::Off, GeometricInvariance::MirrorFlip, GeometricInvariance::MirrorFlipRotate90] {
+                                        let file_name = get_similar_images_cache_file(hash_size, hash_alg, image_filter, geometric_invariance);
+                                        let (mut cache_messages, loaded_items) =
+                                            load_cache_from_file_generalized_by_path::<czkawka_core::tools::similar_images::ImagesEntry>(&file_name, true, &Default::default());
 
-                                    if let Some(cache_entries) = loaded_items {
-                                        let save_messages = save_cache_to_file_generalized(&file_name, &cache_entries, false, 0);
-                                        messages.extend_with_another_messages(save_messages);
+                                        if let Some(cache_entries) = loaded_items {
+                                            let save_messages = save_cache_to_file_generalized(&file_name, &cache_entries, false, 0);
+                                            cache_messages.extend_with_another_messages(save_messages);
+                                        }
+                                        messages.extend_with_another_messages(cache_messages);
                                     }
                                 }
                             }
@@ -215,7 +220,7 @@ pub(crate) fn connect_settings(gui_data: &GuiData) {
 
                 dialog.connect_response(move |dialog, response_type| {
                     if response_type == ResponseType::Ok {
-                        let file_name = get_similar_videos_cache_file(DEFAULT_SKIP_FORWARD_AMOUNT, DEFAULT_VID_HASH_DURATION, DEFAULT_CROP_DETECT);
+                        let file_name = get_similar_videos_cache_file(DEFAULT_SKIP_FORWARD_AMOUNT, DEFAULT_VID_HASH_DURATION, DEFAULT_CROP_DETECT, DEFAULT_WINDOW_COUNT);
                         let (mut messages, loaded_items) =
                             load_cache_from_file_generalized_by_path::<czkawka_core::tools::similar_videos::VideosEntry>(&file_name, true, &Default::default());
 

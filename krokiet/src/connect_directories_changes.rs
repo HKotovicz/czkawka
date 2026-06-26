@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use rfd::FileDialog;
 use slint::{ComponentHandle, Model, ModelRc, VecModel};
 
@@ -117,19 +119,19 @@ fn connect_add_files(app: &MainWindow) {
 
 fn add_included_paths(settings: &Settings, folders: &[String]) {
     let old_folders = settings.get_included_paths_model();
-    let old_folders_path = old_folders.iter().map(|x| x.path.to_string()).collect::<Vec<_>>();
+    let old_folders_path: HashSet<String> = old_folders.iter().map(|x| x.path.to_string()).collect();
     let mut new_folders = old_folders.iter().collect::<Vec<_>>();
 
-    let filtered_folders = folders.iter().filter(|x| !old_folders_path.contains(x)).collect::<Vec<_>>();
+    let filtered_folders = folders.iter().filter(|x| !old_folders_path.contains(x.as_str())).collect::<Vec<_>>();
 
     for x in &mut new_folders {
-        x.selected_row = false;
+        x.focused_row = false;
     }
 
     new_folders.extend(filtered_folders.iter().map(|path| IncludedPathsModel {
         path: (*path).into(),
         referenced_path: false,
-        selected_row: false,
+        focused_row: false,
     }));
 
     new_folders.sort_by_key(|x| x.path.clone());
@@ -140,18 +142,18 @@ fn add_included_paths(settings: &Settings, folders: &[String]) {
 
 pub(crate) fn add_excluded_paths(settings: &Settings, folders: &[String]) {
     let old_folders = settings.get_excluded_paths_model();
-    let old_folders_path = old_folders.iter().map(|x| x.path.to_string()).collect::<Vec<_>>();
+    let old_folders_path: HashSet<String> = old_folders.iter().map(|x| x.path.to_string()).collect();
     let mut new_folders = old_folders.iter().collect::<Vec<_>>();
 
-    let filtered_folders = folders.iter().filter(|x| !old_folders_path.contains(x)).collect::<Vec<_>>();
+    let filtered_folders = folders.iter().filter(|x| !old_folders_path.contains(x.as_str())).collect::<Vec<_>>();
 
     for x in &mut new_folders {
-        x.selected_row = false;
+        x.focused_row = false;
     }
 
     new_folders.extend(filtered_folders.iter().map(|path| ExcludedPathsModel {
         path: (*path).into(),
-        selected_row: false,
+        focused_row: false,
     }));
 
     new_folders.sort_by_key(|x| x.path.clone());

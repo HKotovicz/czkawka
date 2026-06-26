@@ -10,9 +10,9 @@ use rayon::prelude::*;
 
 use crate::common::dir_traversal::{DirTraversalBuilder, DirTraversalResult};
 use crate::common::model::{ToolType, WorkContinueStatus};
-use crate::common::progress_data::{CurrentStage, ProgressData};
+use crate::common::progress_data::{ProgressData, ToolStage};
 use crate::common::progress_stop_handler::{check_if_stop_received, prepare_thread_handler_common};
-use crate::common::tool_data::{CommonData, CommonToolData};
+use crate::common::tool_data::CommonToolData;
 use crate::tools::bad_names::{BadNameEntry, BadNames, BadNamesParameters, Info, NameFixerParams, NameIssues};
 
 impl BadNames {
@@ -56,9 +56,8 @@ impl BadNames {
 
         let progress_handler = prepare_thread_handler_common(
             progress_sender,
-            CurrentStage::BadNamesChecking,
+            ToolStage::BadNamesChecking,
             self.files_to_check.len(),
-            self.get_test_type(),
             self.files_to_check.iter().map(|item| item.size).sum::<u64>(),
         );
 
@@ -113,9 +112,13 @@ impl BadNames {
 
                 let new_path = entry.path.with_file_name(&entry.new_name);
 
+                if new_path.exists() {
+                    return Some(Some(format!("Cannot rename {:?} to {:?}: target file already exists", entry.path, new_path)));
+                }
+
                 match fs::rename(&entry.path, &new_path) {
                     Ok(()) => Some(None),
-                    Err(e) => Some(Some(format!("Failed to rename {:?}: {}", entry.path, e))),
+                    Err(e) => Some(Some(format!("Failed to rename {:?} to {:?}: {}", entry.path, new_path, e))),
                 }
             })
             .while_some()
@@ -148,10 +151,16 @@ pub fn check_and_generate_new_name(path: &Path, checked_issues: &NameIssues) -> 
     }
 
     if checked_issues.non_ascii_graphical {
-        stem = deunicode::deunicode(&stem);
+        stem = deunicode::deunicode(&stem)
+            .chars()
+            .filter(|c| (c.is_ascii_graphic() && !is_shell_glob_char(*c)) || *c == ' ')
+            .collect();
 
         if let Some(ref mut ext) = extension {
-            *ext = deunicode::deunicode(ext).chars().filter(|e| e.is_ascii_graphic() || *e == ' ').collect();
+            *ext = deunicode::deunicode(ext)
+                .chars()
+                .filter(|e| (e.is_ascii_graphic() && !is_shell_glob_char(*e)) || *e == ' ')
+                .collect();
         }
     }
 
@@ -179,6 +188,11 @@ pub fn check_and_generate_new_name(path: &Path, checked_issues: &NameIssues) -> 
         }
     }
 
+    // An empty stem would make `with_file_name` resolve to the parent directory, so fall back to a placeholder.
+    if stem.trim().is_empty() {
+        stem = "empty".to_string();
+    }
+
     let new_name = if let Some(ext) = extension {
         if ext.is_empty() { stem } else { format!("{stem}.{ext}") }
     } else {
@@ -190,6 +204,13 @@ pub fn check_and_generate_new_name(path: &Path, checked_issues: &NameIssues) -> 
 
 fn is_alphanumeric(c: char) -> bool {
     c.is_ascii_alphanumeric()
+}
+
+// `deunicode` can transliterate symbols into shell glob metacharacters (e.g. `•` U+2022 -> `*`,
+// `¿` U+00BF -> `?`) and emits the `[?]` placeholder for unmapped code points. Keeping these would
+// turn an otherwise-cleaned name into one that breaks shell globbing, so drop them.
+fn is_shell_glob_char(c: char) -> bool {
+    matches!(c, '*' | '?' | '[' | ']')
 }
 
 fn remove_duplicated_non_alphanumeric(s: &str) -> String {

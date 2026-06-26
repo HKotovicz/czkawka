@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use czkawka_core::common::model::{CheckingMethod, HashType};
 use czkawka_core::re_exported::{FilterType, HashAlg};
 use czkawka_core::tools::big_file::SearchMode;
-use czkawka_core::tools::similar_images::SimilarityPreset;
+use czkawka_core::tools::similar_images::{GeometricInvariance, SimilarityPreset};
 use log::warn;
 
 pub enum DisplaySpec {
@@ -75,6 +75,15 @@ impl MaxFileSize {
     }
 }
 
+/// Parameters corresponding to one of the audio-similarity presets for Similar Videos.
+#[derive(Debug, Clone)]
+pub struct AudioPresetParams {
+    pub similarity_percent: f64,
+    pub maximum_difference: f64,
+    pub length_ratio: f64,
+    pub min_duration_seconds: u32,
+}
+
 pub struct StringComboBoxItems {
     pub min_file_size: Vec<StringComboBoxItem<MinFileSize>>,
     pub max_file_size: Vec<StringComboBoxItem<MaxFileSize>>,
@@ -86,7 +95,9 @@ pub struct StringComboBoxItems {
     pub similarity_preset: Vec<StringComboBoxItem<SimilarityPreset>>,
     pub hash_alg: Vec<StringComboBoxItem<HashAlg>>,
     pub image_filter: Vec<StringComboBoxItem<FilterType>>,
+    pub image_geometric_invariance: Vec<StringComboBoxItem<GeometricInvariance>>,
     pub same_music_check_method: Vec<StringComboBoxItem<CheckingMethod>>,
+    pub similar_videos_audio_preset: Vec<StringComboBoxItem<AudioPresetParams>>,
 }
 
 impl Default for StringComboBoxItems {
@@ -161,9 +172,49 @@ impl StringComboBoxItems {
             ("lanczos3", "Lanczos3", FilterType::Lanczos3),
         ]);
 
+        let image_geometric_invariance = Self::convert(&[
+            ("off", "Off", GeometricInvariance::Off),
+            ("mirror_flip", "Mirror + Flip", GeometricInvariance::MirrorFlip),
+            ("mirror_flip_rotate90", "Mirror + Flip + Rotate 90", GeometricInvariance::MirrorFlipRotate90),
+        ]);
+
         let same_music_check_method = Self::convert_i18n(&[
             ("tags", CheckingMethod::AudioTags, DisplaySpec::Translatable("option_music_method_tags")),
             ("audio", CheckingMethod::AudioContent, DisplaySpec::Translatable("option_music_method_audio")),
+        ]);
+
+        // Preset values match krokiet's apply_similar_videos_audio_preset().
+        let similar_videos_audio_preset = Self::convert_i18n(&[
+            (
+                "identical",
+                AudioPresetParams {
+                    similarity_percent: 90.0,
+                    maximum_difference: 2.0,
+                    length_ratio: 0.85,
+                    min_duration_seconds: 5,
+                },
+                DisplaySpec::Translatable("option_audio_preset_identical"),
+            ),
+            (
+                "clip_in_longer",
+                AudioPresetParams {
+                    similarity_percent: 90.0,
+                    maximum_difference: 4.0,
+                    length_ratio: 0.05,
+                    min_duration_seconds: 10,
+                },
+                DisplaySpec::Translatable("option_audio_preset_clip"),
+            ),
+            (
+                "similar",
+                AudioPresetParams {
+                    similarity_percent: 25.0,
+                    maximum_difference: 6.0,
+                    length_ratio: 0.4,
+                    min_duration_seconds: 10,
+                },
+                DisplaySpec::Translatable("option_audio_preset_similar"),
+            ),
         ]);
 
         Self {
@@ -177,7 +228,9 @@ impl StringComboBoxItems {
             similarity_preset,
             hash_alg,
             image_filter,
+            image_geometric_invariance,
             same_music_check_method,
+            similar_videos_audio_preset,
         }
     }
 
@@ -349,6 +402,22 @@ mod tests {
         assert!(!items.similarity_preset.is_empty());
         assert!(!items.hash_alg.is_empty());
         assert!(!items.image_filter.is_empty());
+        assert!(!items.image_geometric_invariance.is_empty());
         assert!(!items.same_music_check_method.is_empty());
+        assert!(!items.similar_videos_audio_preset.is_empty());
+    }
+
+    #[test]
+    fn image_geometric_invariance_config_names_are_stable() {
+        let items = StringComboBoxItems::new();
+        let names: Vec<&str> = items.image_geometric_invariance.iter().map(|e| e.config_name.as_str()).collect();
+        assert_eq!(names, &["off", "mirror_flip", "mirror_flip_rotate90"]);
+    }
+
+    #[test]
+    fn similar_videos_audio_preset_config_names_are_stable() {
+        let items = StringComboBoxItems::new();
+        let names: Vec<&str> = items.similar_videos_audio_preset.iter().map(|e| e.config_name.as_str()).collect();
+        assert_eq!(names, &["identical", "clip_in_longer", "similar"]);
     }
 }

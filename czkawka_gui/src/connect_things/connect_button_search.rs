@@ -18,7 +18,10 @@ use czkawka_core::tools::empty_folder::EmptyFolder;
 use czkawka_core::tools::invalid_symlinks::InvalidSymlinks;
 use czkawka_core::tools::same_music::{MusicSimilarity, SameMusic, SameMusicParameters};
 use czkawka_core::tools::similar_images::{SimilarImages, SimilarImagesParameters};
-use czkawka_core::tools::similar_videos::{DEFAULT_CROP_DETECT, DEFAULT_SKIP_FORWARD_AMOUNT, DEFAULT_VID_HASH_DURATION, SimilarVideos, SimilarVideosParameters};
+use czkawka_core::tools::similar_videos::{
+    DEFAULT_CROP_DETECT, DEFAULT_DURATION_TOLERANCE_PCT, DEFAULT_MIN_MATCHING_WINDOWS, DEFAULT_SKIP_FORWARD_AMOUNT, DEFAULT_SUBCLIP_MIN_MATCH, DEFAULT_VID_HASH_DURATION,
+    DEFAULT_WINDOW_COUNT, SimilarVideos, SimilarVideosParameters,
+};
 use czkawka_core::tools::temporary::Temporary;
 use fun_time::fun_time;
 use gtk4::Grid;
@@ -28,8 +31,8 @@ use crate::gui_structs::common_tree_view::TreeViewListStoreTrait;
 use crate::gui_structs::common_upper_tree_view::UpperTreeViewEnum;
 use crate::gui_structs::gui_data::GuiData;
 use crate::help_combo_box::{
-    AUDIO_TYPE_CHECK_METHOD_COMBO_BOX, BIG_FILES_CHECK_METHOD_COMBO_BOX, DUPLICATES_CHECK_METHOD_COMBO_BOX, DUPLICATES_HASH_TYPE_COMBO_BOX, IMAGES_HASH_SIZE_COMBO_BOX,
-    IMAGES_HASH_TYPE_COMBO_BOX, IMAGES_RESIZE_ALGORITHM_COMBO_BOX,
+    AUDIO_TYPE_CHECK_METHOD_COMBO_BOX, BIG_FILES_CHECK_METHOD_COMBO_BOX, DUPLICATES_CHECK_METHOD_COMBO_BOX, DUPLICATES_HASH_TYPE_COMBO_BOX, IMAGES_GEOMETRIC_INVARIANCE_COMBO_BOX,
+    IMAGES_HASH_SIZE_COMBO_BOX, IMAGES_HASH_TYPE_COMBO_BOX, IMAGES_RESIZE_ALGORITHM_COMBO_BOX,
 };
 use crate::help_functions::{get_path_buf_from_vector_of_strings, hide_all_buttons, reset_text_view, set_buttons};
 use crate::helpers::enums::{ColumnsExcludedDirectory, ColumnsIncludedDirectory, Message};
@@ -292,7 +295,7 @@ fn empty_files_search(
     thread::Builder::new()
         .stack_size(DEFAULT_THREAD_SIZE)
         .spawn(move || {
-            let mut tool = EmptyFiles::new();
+            let mut tool = EmptyFiles::default();
 
             set_common_settings(&mut tool, &loaded_commons);
             tool.search(&stop_flag, Some(&progress_data_sender));
@@ -570,6 +573,7 @@ fn similar_image_search(
     let combo_box_image_hash_size = gui_data.main_notebook.combo_box_image_hash_size.clone();
     let combo_box_image_hash_algorithm = gui_data.main_notebook.combo_box_image_hash_algorithm.clone();
     let combo_box_image_resize_algorithm = gui_data.main_notebook.combo_box_image_resize_algorithm.clone();
+    let combo_box_image_geometric_invariance = gui_data.main_notebook.combo_box_image_geometric_invariance.clone();
     let check_button_image_ignore_same_size = gui_data.main_notebook.check_button_image_ignore_same_size.clone();
     let check_button_settings_similar_images_delete_outdated_cache = gui_data.settings.check_button_settings_similar_images_delete_outdated_cache.clone();
     let image_preview_similar_images = gui_data.main_notebook.image_preview_similar_images.clone();
@@ -587,6 +591,9 @@ fn similar_image_search(
     let hash_alg_index = combo_box_image_hash_algorithm.active().expect("Failed to get active search") as usize;
     let hash_alg = IMAGES_HASH_TYPE_COMBO_BOX[hash_alg_index].hash_alg;
 
+    let geometric_invariance_index = combo_box_image_geometric_invariance.active().expect("Failed to get active search") as usize;
+    let geometric_invariance = IMAGES_GEOMETRIC_INVARIANCE_COMBO_BOX[geometric_invariance_index].invariance;
+
     let ignore_same_size = check_button_image_ignore_same_size.is_active();
 
     let similarity = scale_similarity_similar_images.value() as u32;
@@ -603,6 +610,7 @@ fn similar_image_search(
                 image_filter,
                 ignore_same_size,
                 false, // Not implemented in gtk gui
+                geometric_invariance,
             );
             let mut tool = SimilarImages::new(params);
 
@@ -645,10 +653,19 @@ fn similar_video_search(
                 DEFAULT_SKIP_FORWARD_AMOUNT,
                 DEFAULT_VID_HASH_DURATION,
                 DEFAULT_CROP_DETECT,
+                DEFAULT_WINDOW_COUNT,
+                DEFAULT_DURATION_TOLERANCE_PCT,
+                DEFAULT_MIN_MATCHING_WINDOWS,
+                DEFAULT_SUBCLIP_MIN_MATCH,
                 false, // Not implemented in gtk gui
                 10,    // Not implemented in gtk gui
                 false, // Not implemented in gtk gui
                 2,     // Not implemented in gtk gui
+                false, // check_audio_content - not implemented in gtk gui
+                czkawka_core::tools::similar_videos::DEFAULT_AUDIO_SIMILARITY_PERCENT,
+                czkawka_core::tools::similar_videos::DEFAULT_AUDIO_MAXIMUM_DIFFERENCE,
+                czkawka_core::tools::similar_videos::DEFAULT_AUDIO_LENGTH_RATIO,
+                czkawka_core::tools::similar_videos::DEFAULT_AUDIO_MIN_DURATION_SECONDS,
             );
             let mut tool = SimilarVideos::new(params);
 

@@ -7,11 +7,25 @@ use clap::builder::styling::AnsiColor;
 use czkawka_core::CZKAWKA_VERSION;
 use czkawka_core::common::model::{CheckingMethod, HashType};
 use czkawka_core::common::tool_data::DeleteMethod;
-use czkawka_core::re_exported::{Cropdetect, FilterType, HashAlg};
+use czkawka_core::re_exported::{FilterType, HashAlg};
 use czkawka_core::tools::broken_files::CheckedTypes;
 use czkawka_core::tools::same_music::MusicSimilarity;
-use czkawka_core::tools::similar_videos::{ALLOWED_SKIP_FORWARD_AMOUNT, ALLOWED_VID_HASH_DURATION, DEFAULT_SKIP_FORWARD_AMOUNT, crop_detect_from_str_opt};
-use czkawka_core::tools::video_optimizer::{HardwareEncoder, NoiseReductionMethod, VideoCodec};
+use czkawka_core::tools::similar_images::GeometricInvariance;
+use czkawka_core::tools::similar_videos::{
+    DEFAULT_AUDIO_LENGTH_RATIO, DEFAULT_AUDIO_MAXIMUM_DIFFERENCE, DEFAULT_AUDIO_MIN_DURATION_SECONDS, DEFAULT_AUDIO_SIMILARITY_PERCENT, DEFAULT_CROP_DETECT,
+    DEFAULT_DURATION_TOLERANCE_PCT, DEFAULT_MIN_MATCHING_WINDOWS, DEFAULT_SKIP_FORWARD_AMOUNT, DEFAULT_SUBCLIP_MIN_MATCH, DEFAULT_THUMBNAIL_GRID_TILES_PER_SIDE,
+    DEFAULT_VIDEO_PERCENTAGE_FOR_THUMBNAIL, DEFAULT_WINDOW_COUNT,
+};
+use czkawka_core::tools::video_optimizer::{NoiseReductionMethod, VideoCodec};
+use log::error;
+
+use crate::parsers::{
+    parse_audio_length_ratio, parse_audio_maximum_difference, parse_audio_similarity_percent, parse_broken_files, parse_checking_method_duplicate,
+    parse_checking_method_same_music, parse_crop_mechanism, parse_delete_method, parse_duration_tolerance_pct, parse_geometric_invariance, parse_hash_type, parse_image_hash_size,
+    parse_match_fraction, parse_max_samples, parse_maximal_file_size, parse_maximum_difference, parse_min_crop_size, parse_minimal_file_size, parse_minimum_segment_duration,
+    parse_music_duplicate_type, parse_noise_reduction, parse_scan_duration, parse_similar_hash_algorithm, parse_similar_image_filter, parse_skip_forward_amount, parse_tolerance,
+    parse_video_codec, parse_window_count,
+};
 
 #[cfg(not(feature = "no_colors"))]
 pub const CLAP_STYLING: Styles = Styles::styled()
@@ -160,8 +174,8 @@ pub struct DuplicatesArgs {
         long,
         value_parser = parse_minimal_file_size,
         default_value = "257144",
-        help = "Minimum cached file size in bytes",
-        long_help = "Minimum size of cached files in bytes, assigning bigger value may speed up the scan but loading the cache will be slower, assigning smaller value may slow down the scan and some files may need to be hashed again but loading the cache will be faster"
+        help = "Minimum size of files stored in the hash cache (bytes)",
+        long_help = "Minimum file size (in bytes) to be included in the hash cache. A higher value produces a smaller cache file, making cache loading faster, but more files will be excluded from the cache and must be re-hashed on each scan. A lower value stores more files in the cache, making the scan faster at the cost of a larger cache file and slower cache loading."
     )]
     pub minimal_cached_file_size: u64,
     #[clap(
@@ -169,8 +183,8 @@ pub struct DuplicatesArgs {
         long,
         default_value = "HASH",
         value_parser = parse_checking_method_duplicate,
-        help = "Search method (NAME, SIZE, HASH)",
-        long_help = "Methods to search files.\nNAME - Fast but rarely usable,\nSIZE - Fast but not accurate, checking by the file's size,\nHASH - The slowest method, checking by the hash of the entire file"
+        help = "Search method (NAME, SIZE, SIZE_NAME, HASH)",
+        long_help = "Methods to search files.\nNAME - Fast but rarely usable,\nSIZE - Fast but not accurate, checking by the file's size,\nSIZE_NAME - Checking by both the file's size and name,\nHASH - The slowest method, checking by the hash of the entire file"
     )]
     pub search_method: CheckingMethod,
     #[clap(flatten)]
@@ -227,6 +241,18 @@ pub struct EmptyFilesArgs {
     pub common_cli_items: CommonCliItems,
     #[clap(flatten)]
     pub delete_method: SDMethod,
+    #[clap(
+        long,
+        help = "Also find files filled entirely with null bytes",
+        long_help = "Also find non-empty files whose entire content consists of null bytes (0x00). These files take disk space but carry no meaningful data."
+    )]
+    pub zero_byte_content: bool,
+    #[clap(
+        long,
+        help = "Also find files filled entirely with non-printable characters",
+        long_help = "Also find non-empty files whose entire content consists of non-printable characters (any byte outside the visible ASCII range 0x21-0x7E: all control characters, space (0x20), DEL (0x7F), and non-ASCII bytes 0x80-0xFF). Implies --zero-byte-content."
+    )]
+    pub non_printable_content: bool,
 }
 
 #[derive(Debug, clap::Args)]
@@ -265,7 +291,7 @@ pub struct SimilarImagesArgs {
     #[clap(
         short = 'i',
         long,
-        value_parser = parse_minimal_file_size,
+        value_parser = parse_maximal_file_size,
         default_value = "18446744073709551615",
         help = "Maximum size in bytes",
         long_help = "Maximum size of checked files in bytes, assigning lower value may speed up searching"
@@ -315,6 +341,14 @@ pub struct SimilarImagesArgs {
         long_help = "Size of the perceptual hash. Larger values provide more detailed comparison but require higher max_difference values. 8 is fastest and least detailed, 64 is slowest but most detailed. Recommended: 8 or 16 for typical use."
     )]
     pub hash_size: u8,
+    #[clap(
+        long,
+        default_value = "off",
+        value_parser = parse_geometric_invariance,
+        help = "Geometric invariance mode (off, mirror-flip, mirror-flip-rotate90)",
+        long_help = "Geometric invariance mode for similar image matching. off compares images as-is, mirror-flip also compares mirrored/flipped variants, mirror-flip-rotate90 also compares 90-degree rotations."
+    )]
+    pub geometric_invariance: GeometricInvariance,
 }
 
 #[derive(Debug, clap::Args)]
@@ -390,38 +424,9 @@ pub struct SameMusicArgs {
         value_parser = parse_maximum_difference,
         default_value = "2.0",
         help = "Maximum difference between audio segments",
-        long_help = "Maximum allowed difference between audio segments (0.0-10.0). Value 0.0 will find only identical segments, while 10.0 will find segments that are barely similar. Lower values mean stricter matching."
+        long_help = "Maximum allowed difference between audio segments (0.0-10.0, inclusive). Value close to 0.0 will find only nearly identical segments, while 10.0 will find segments that are barely similar. Lower values mean stricter matching."
     )]
     pub maximum_difference: f64,
-}
-
-fn parse_maximum_difference(src: &str) -> Result<f64, String> {
-    match src.parse::<f64>() {
-        Ok(maximum_difference) => {
-            if maximum_difference <= 0.0 {
-                Err("Maximum difference must be bigger than 0".to_string())
-            } else if maximum_difference >= 10.0 {
-                Err("Maximum difference must be smaller than 10.0".to_string())
-            } else {
-                Ok(maximum_difference)
-            }
-        }
-        Err(e) => Err(e.to_string()),
-    }
-}
-fn parse_minimum_segment_duration(src: &str) -> Result<f32, String> {
-    match src.parse::<f32>() {
-        Ok(minimum_segment_duration) => {
-            if minimum_segment_duration <= 0.0 {
-                Err("Minimum segment duration must be bigger than 0".to_string())
-            } else if minimum_segment_duration >= 3600.0 {
-                Err("Minimum segment duration must be smaller than 3600(greater values not have much sense)".to_string())
-            } else {
-                Ok(minimum_segment_duration)
-            }
-        }
-        Err(e) => Err(e.to_string()),
-    }
 }
 
 #[derive(Debug, clap::Args)]
@@ -441,10 +446,10 @@ pub struct BrokenFilesArgs {
     #[clap(
         short,
         long,
-        default_value = "PDF",
+        default_values = ["PDF", "AUDIO", "IMAGE", "ARCHIVE", "FONT", "MARKUP"],
         value_parser = parse_broken_files,
-        help = "Checking file types (PDF, AUDIO, IMAGE, ARCHIVE, VIDEO_FFPROBE, VIDEO_FFMPEG)",
-        long_help = "Methods to search files - default PDF.\nPDF - finds broken PDF files,\nAUDIO - finds broken audio files,\nIMAGE - finds broken image files,\nARCHIVE - finds broken archive files,\nVIDEO_FFPROBE - quick video check using ffprobe (header validation),\nVIDEO_FFMPEG - deep video check using ffmpeg (full decode)"
+        help = "Checking file types (PDF, AUDIO, IMAGE, ARCHIVE, FONT, MARKUP, VIDEO_FFPROBE, VIDEO_FFMPEG)",
+        long_help = "Methods to search files - by default all types except video are checked (VIDEO_FFPROBE and VIDEO_FFMPEG require ffmpeg to be installed).\nPDF - finds broken PDF files,\nAUDIO - finds broken audio files,\nIMAGE - finds broken image files,\nARCHIVE - finds broken archive files (zip, 7z, gz, tar, zst, bz2, xz),\nFONT - finds broken font files (ttf, otf, ttc),\nMARKUP - finds broken JSON/XML/TOML/YAML/SVG files,\nVIDEO_FFPROBE - quick video check using ffprobe (header validation),\nVIDEO_FFMPEG - deep video check using ffmpeg (full decode)"
     )]
     pub checked_types: Vec<CheckedTypes>,
 }
@@ -461,6 +466,8 @@ pub struct SimilarVideosArgs {
     pub allow_hard_links: AllowHardLinks,
     #[clap(flatten)]
     pub ignore_same_size: IgnoreSameSize,
+    #[clap(flatten)]
+    pub ignore_same_resolution: IgnoreSameResolution,
     #[clap(
         short,
         long,
@@ -500,12 +507,44 @@ pub struct SimilarVideosArgs {
     #[clap(
         short = 'B',
         long,
-        default_value = "letterbox",
-        value_parser = parse_crop_detect,
-        help = "Crop detect method (none, letterbox, motion)",
-        long_help = "Method to detect and crop black bars from video frames before comparison. 'none' disables cropping, 'letterbox' removes static black bars, 'motion' uses motion detection to find content area."
+        default_value_t = DEFAULT_CROP_DETECT,
+        action = clap::ArgAction::Set,
+        help = "Enable letterbox crop detection (true/false)",
+        long_help = "Detect and crop letterbox (black bar) regions before computing the video signature. Disable if you want to keep the full frame."
     )]
-    pub crop_detect: Cropdetect,
+    pub crop_detect: bool,
+    #[clap(
+        long,
+        default_value_t = DEFAULT_WINDOW_COUNT,
+        value_parser = parse_window_count,
+        help = "Number of temporal windows per video (1-20)",
+        long_help = "How many temporal windows are sampled per video when building the signature. More windows = more accurate matches, but slower scans. Allowed range: 1-20."
+    )]
+    pub window_count: u32,
+    #[clap(
+        long,
+        default_value_t = DEFAULT_DURATION_TOLERANCE_PCT,
+        value_parser = parse_duration_tolerance_pct,
+        help = "Duration grouping tolerance in % (0.0-100.0)",
+        long_help = "Videos are pre-grouped by duration before being compared. Two videos are considered candidates if their durations differ by no more than this percentage. Lower values speed up scanning but may miss matches when duration metadata is imprecise."
+    )]
+    pub duration_tolerance_pct: f64,
+    #[clap(
+        long,
+        default_value_t = DEFAULT_MIN_MATCHING_WINDOWS,
+        value_parser = parse_match_fraction,
+        help = "Min matching windows fraction (0.0-1.0)",
+        long_help = "Minimum fraction of temporal windows that must match between two videos to classify them as 'same content'. Higher values require more agreement across the full timeline."
+    )]
+    pub min_matching_windows: f64,
+    #[clap(
+        long,
+        default_value_t = DEFAULT_SUBCLIP_MIN_MATCH,
+        value_parser = parse_match_fraction,
+        help = "Subclip match fraction (0.0-1.0)",
+        long_help = "Minimum fraction of clip windows that must align inside the source video to flag a sub-clip match (a shorter video contained inside a longer one)."
+    )]
+    pub subclip_min_match: f64,
     #[clap(
         short = 'A',
         long,
@@ -515,6 +554,69 @@ pub struct SimilarVideosArgs {
         long_help = "Duration of video scanning in seconds. Longer duration provides more accurate results but takes more time. Allowed values are predefined in the application."
     )]
     pub scan_duration: u32,
+    #[clap(
+        long,
+        help = "Generate thumbnails for found similar videos",
+        long_help = "Generate thumbnails for found similar videos. Thumbnail preview is only available in GUI (krokiet/cedinia), but generating them via CLI can pre-populate the cache for later GUI usage."
+    )]
+    pub generate_thumbnails: bool,
+    #[clap(
+        long,
+        default_value_t = DEFAULT_VIDEO_PERCENTAGE_FOR_THUMBNAIL,
+        help = "Percentage of video duration to seek for thumbnail (0-100)",
+        long_help = "Percentage of video duration from the start at which the thumbnail frame is captured. Thumbnail preview is only available in GUI, but generating them via CLI can pre-populate the cache for later GUI usage."
+    )]
+    pub thumbnail_video_percentage_from_start: u8,
+    #[clap(
+        long,
+        help = "Generate grid thumbnail instead of single frame",
+        long_help = "When enabled, generates a grid of multiple frames instead of a single thumbnail frame. Thumbnail preview is only available in GUI, but generating them via CLI can pre-populate the cache for later GUI usage."
+    )]
+    pub generate_thumbnail_grid: bool,
+    #[clap(
+        long,
+        default_value_t = DEFAULT_THUMBNAIL_GRID_TILES_PER_SIDE,
+        help = "Number of tiles per side in grid thumbnail (e.g. 2 = 2x2 grid)",
+        long_help = "Number of tiles per side when generating a grid thumbnail (e.g. 2 means a 2x2 = 4-frame grid). Thumbnail preview is only available in GUI, but generating them via CLI can pre-populate the cache for later GUI usage."
+    )]
+    pub thumbnail_grid_tiles_per_side: u8,
+    #[clap(
+        long,
+        help = "Compare videos by audio fingerprint (WARNING: very resource-intensive)",
+        long_help = "When enabled, videos are also compared by their audio fingerprint. This is very resource-intensive and significantly slows down scanning."
+    )]
+    pub check_audio_content: bool,
+    #[clap(
+        long,
+        default_value_t = DEFAULT_AUDIO_SIMILARITY_PERCENT,
+        value_parser = parse_audio_similarity_percent,
+        help = "Minimum percentage of matching audio content (0.0-100.0)",
+        long_help = "Minimum percentage of audio duration that must match between two videos to consider them similar. Allowed range: 0.0-100.0."
+    )]
+    pub audio_similarity_percent: f64,
+    #[clap(
+        long,
+        default_value_t = DEFAULT_AUDIO_MAXIMUM_DIFFERENCE,
+        value_parser = parse_audio_maximum_difference,
+        help = "Maximum allowed audio fingerprint segment difference (0.0-10.0)",
+        long_help = "Maximum score difference allowed for matched audio segments. Lower values mean stricter matching. Allowed range: 0.0-10.0."
+    )]
+    pub audio_maximum_difference: f64,
+    #[clap(
+        long,
+        default_value_t = DEFAULT_AUDIO_LENGTH_RATIO,
+        value_parser = parse_audio_length_ratio,
+        help = "Minimum ratio of shorter to longer audio duration (0.0-1.0)",
+        long_help = "Minimum ratio between the shorter and longer audio duration. Videos where the shorter is less than this fraction of the longer are skipped. Allowed range: 0.0-1.0."
+    )]
+    pub audio_length_ratio: f64,
+    #[clap(
+        long,
+        default_value_t = DEFAULT_AUDIO_MIN_DURATION_SECONDS,
+        help = "Minimum audio duration in seconds for comparison",
+        long_help = "Videos with audio duration shorter than this value are excluded from audio comparison."
+    )]
+    pub audio_min_duration_seconds: u32,
 }
 
 #[derive(Debug, clap::Args)]
@@ -815,7 +917,7 @@ pub struct ExifRemoverArgs {
         short = 'o',
         long,
         help = "Override original files",
-        long_help = "Override original files instead of creating backup files with '_cleaned' suffix"
+        long_help = "Override original files instead of creating a copy with 'czkawka_cleaned_exif' inserted before the extension (e.g. 'photo.jpg' becomes 'photo.czkawka_cleaned_exif.jpg')"
     )]
     pub override_file: bool,
 }
@@ -849,17 +951,24 @@ pub struct CommonCliItems {
         short = 'E',
         long,
         help = "Excluded item(s)",
-        long_help = "List of excluded items using wildcards (e.g., */temp*, *.tmp). May be slower than -e, so use -e for directories when possible."
+        long_help = "List of excluded items using wildcards (e.g., */temp*, *.tmp). May be slower than -e, so use -e for directories when possible. Helpful macros are available: DEFAULT (the same default excluded items the GUI uses) and $TRASH (the OS trash / recycle bin, matching the GUI defaults - */Trash/*,*/.Trash-*/* on Linux/macOS, *:\\$RECYCLE.BIN\\* on Windows)."
     )]
     pub excluded_items: Vec<String>,
     #[clap(
         short = 'x',
         long,
+        value_delimiter = ',',
         help = "Allowed file extension(s)",
         long_help = "List of file extensions to check. Helpful macros are available: IMAGE (jpg,kra,gif,png,bmp,tiff,hdr,svg), TEXT (txt,doc,docx,odt,rtf), VIDEO (mp4,flv,mkv,webm,vob,ogv,gifv,avi,mov,wmv,mpg,m4v,m4p,mpeg,3gp,m2ts), MUSIC (mp3,flac,ogg,tta,wma,webm)"
     )]
     pub allowed_extensions: Vec<String>,
-    #[clap(short = 'P', long, help = "Excluded file extension(s)", long_help = "List of file extensions to exclude from search.")]
+    #[clap(
+        short = 'P',
+        long,
+        value_delimiter = ',',
+        help = "Excluded file extension(s)",
+        long_help = "List of file extensions to exclude from search."
+    )]
     pub excluded_extensions: Vec<String>,
     #[clap(flatten)]
     pub file_to_save: FileToSave,
@@ -926,7 +1035,7 @@ pub struct DMethod {
         default_value = "NONE",
         value_parser = parse_delete_method,
         help = "Delete method (AEN, AEO, ON, OO, AEB, AES, OB, OS, HARD)",
-        long_help = "Method for selecting which files to delete from duplicate groups:\nAEN - All files Except Newest (keeps newest)\nAEO - All files Except Oldest (keeps oldest)\nON - Only 1 file, the Newest (deletes all but newest)\nOO - Only 1 file, the Oldest (deletes all but oldest)\nAEB - All files Except Biggest (keeps biggest)\nAES - All files Except Smallest (keeps smallest)\nOB - Only 1 file, the Biggest (deletes all but biggest)\nOS - Only 1 file, the Smallest (deletes all but smallest)\nHARD - create hard links to save space\nNONE - do not delete files (default)"
+        long_help = "Method for selecting which files to delete from duplicate groups:\nAEN - All files Except Newest (keeps only newest)\nAEO - All files Except Oldest (keeps only oldest)\nON - Only the Newest deleted (keeps all but newest)\nOO - Only the Oldest deleted (keeps all but oldest)\nAEB - All files Except Biggest (keeps only biggest)\nAES - All files Except Smallest (keeps only smallest)\nOB - Only the Biggest deleted (keeps all but biggest)\nOS - Only the Smallest deleted (keeps all but smallest)\nHARD - create hard links to save space\nNONE - do not delete files (default)"
     )]
     pub delete_method: DeleteMethod,
     #[clap(
@@ -984,7 +1093,7 @@ pub struct ReferenceDirectories {
         short,
         long,
         help = "Reference directory(ies)",
-        long_help = "List of reference directory(ies) to search (absolute paths). Files in these directories will be scanned but won't appear in the results (useful for comparing against a known good set of files)."
+        long_help = "List of reference directory(ies) (absolute paths). Files here appear as the reference entry in results - only non-reference files that match a reference file are reported. Files found exclusively in reference directories are not listed."
     )]
     pub reference_directories: Vec<PathBuf>,
 }
@@ -1041,7 +1150,7 @@ pub struct IgnoreSameSize {
         short = 'J',
         long,
         help = "Ignore files with same size",
-        long_help = "Groups files by size and keeps only one file from each size group, ignoring files with identical sizes (useful for quick deduplication based solely on file size)."
+        long_help = "Within each similar-file group, removes entries that share a file size with another entry in the same group. Groups that shrink to a single entry are discarded."
     )]
     pub ignore_same_size: bool,
 }
@@ -1052,7 +1161,7 @@ pub struct IgnoreSameResolution {
         short = 'Z',
         long,
         help = "Ignore images with same resolution",
-        long_help = "Skips images that have identical resolution (width x height), keeping only one image per resolution group."
+        long_help = "Within each similar-file group, removes entries that share a resolution (WxH) with another entry in the same group. Groups that shrink to a single entry are discarded."
     )]
     pub ignore_same_resolution: bool,
 }
@@ -1085,245 +1194,12 @@ impl JsonPrettyFileToSave {
     }
 }
 
-fn parse_scan_duration(s: &str) -> Result<u32, String> {
-    match s.parse::<u32>() {
-        Ok(scan_duration) => {
-            if ALLOWED_VID_HASH_DURATION.contains(&scan_duration) {
-                Ok(scan_duration)
-            } else {
-                Err(format!("Scan duration must be one of: {ALLOWED_VID_HASH_DURATION:?}"))
-            }
-        }
-        Err(e) => Err(e.to_string()),
+pub fn validate_file_sizes(minimal: u64, maximal: u64) {
+    if maximal < minimal {
+        error!("WARNING: Maximum file size ({maximal}) is smaller than minimum file size ({minimal}), no files will match.");
     }
 }
 
-fn parse_crop_detect(src: &str) -> Result<Cropdetect, String> {
-    match crop_detect_from_str_opt(src) {
-        Some(crop_detect) => Ok(crop_detect),
-        None => Err(format!("Crop detect \"{src}\" is not valid")),
-    }
-}
-
-fn parse_skip_forward_amount(src: &str) -> Result<u32, String> {
-    match src.parse::<u32>() {
-        Ok(skip_forward_amount) => {
-            if !ALLOWED_SKIP_FORWARD_AMOUNT.contains(&skip_forward_amount) {
-                Err(format!("Skip forward amount must be one of: {ALLOWED_SKIP_FORWARD_AMOUNT:?}"))
-            } else {
-                Ok(skip_forward_amount)
-            }
-        }
-        Err(e) => Err(e.to_string()),
-    }
-}
-fn parse_hash_type(src: &str) -> Result<HashType, &'static str> {
-    match src.to_ascii_lowercase().as_str() {
-        "blake3" => Ok(HashType::Blake3),
-        "crc32" => Ok(HashType::Crc32),
-        "xxh3" => Ok(HashType::Xxh3),
-        _ => Err("Couldn't parse the hash type (allowed: BLAKE3, CRC32, XXH3)"),
-    }
-}
-
-fn parse_tolerance(src: &str) -> Result<i32, &'static str> {
-    match src.parse::<i32>() {
-        Ok(t) => {
-            if (0..=20).contains(&t) {
-                Ok(t)
-            } else {
-                Err("Tolerance should be in range <0,20>(Higher and lower similarity )")
-            }
-        }
-        _ => Err("Failed to parse tolerance as i32 value."),
-    }
-}
-
-fn parse_checking_method_duplicate(src: &str) -> Result<CheckingMethod, &'static str> {
-    match src.to_ascii_lowercase().as_str() {
-        "name" => Ok(CheckingMethod::Name),
-        "size" => Ok(CheckingMethod::Size),
-        "size_name" => Ok(CheckingMethod::SizeName),
-        "hash" => Ok(CheckingMethod::Hash),
-        _ => Err("Couldn't parse the search method (allowed: NAME, SIZE, HASH)"),
-    }
-}
-
-fn parse_broken_files(src: &str) -> Result<CheckedTypes, &'static str> {
-    match src.to_ascii_lowercase().as_str() {
-        "pdf" => Ok(CheckedTypes::PDF),
-        "audio" => Ok(CheckedTypes::AUDIO),
-        "image" => Ok(CheckedTypes::IMAGE),
-        "archive" => Ok(CheckedTypes::ARCHIVE),
-        "video_ffprobe" => Ok(CheckedTypes::VIDEO_FFPROBE),
-        "video_ffmpeg" => Ok(CheckedTypes::VIDEO_FFMPEG),
-        _ => Err("Couldn't parse the broken files type (allowed: PDF, AUDIO, IMAGE, ARCHIVE, VIDEO_FFPROBE, VIDEO_FFMPEG)"),
-    }
-}
-
-fn parse_checking_method_same_music(src: &str) -> Result<CheckingMethod, &'static str> {
-    match src.to_ascii_lowercase().as_str() {
-        "tags" => Ok(CheckingMethod::AudioTags),
-        "content" => Ok(CheckingMethod::AudioContent),
-        _ => Err("Couldn't parse the search method (allowed: TAGS, CONTENT)"),
-    }
-}
-
-fn parse_video_codec(src: &str) -> Result<VideoCodec, &'static str> {
-    match src.to_ascii_lowercase().as_str() {
-        "h264" => Ok(VideoCodec::H264),
-        "h265" | "hevc" => Ok(VideoCodec::H265),
-        "av1" => Ok(VideoCodec::Av1),
-        "vp9" => Ok(VideoCodec::Vp9),
-        _ => Err("Couldn't parse the video codec (allowed: h264, h265, av1, vp9)"),
-    }
-}
-
-fn parse_hardware_encoder(src: &str) -> Result<HardwareEncoder, &'static str> {
-    match src.to_ascii_lowercase().as_str() {
-        "none" => Ok(HardwareEncoder::None),
-        "nvenc" => Ok(HardwareEncoder::Nvenc),
-        "vaapi" => Ok(HardwareEncoder::Vaapi),
-        "qsv" => Ok(HardwareEncoder::Qsv),
-        "videotoolbox" => Ok(HardwareEncoder::VideoToolbox),
-        "amf" => Ok(HardwareEncoder::Amf),
-        _ => Err("Couldn't parse the hardware encoder (allowed: none, nvenc, vaapi, qsv, videotoolbox, amf)"),
-    }
-}
-
-fn parse_max_samples(src: &str) -> Result<usize, String> {
-    match src.parse::<usize>() {
-        Ok(val) if (5..=1000).contains(&val) => Ok(val),
-        Ok(_) => Err("Maximum samples must be between 5 and 1000".to_string()),
-        Err(e) => Err(e.to_string()),
-    }
-}
-
-fn parse_min_crop_size(src: &str) -> Result<u32, String> {
-    match src.parse::<u32>() {
-        Ok(val) if (1..=1000).contains(&val) => Ok(val),
-        Ok(_) => Err("Minimum crop size must be between 1 and 1000".to_string()),
-        Err(e) => Err(e.to_string()),
-    }
-}
-
-fn parse_delete_method(src: &str) -> Result<DeleteMethod, &'static str> {
-    match src.to_ascii_lowercase().as_str() {
-        "none" => Ok(DeleteMethod::None),
-        "aen" => Ok(DeleteMethod::AllExceptNewest),
-        "aeo" => Ok(DeleteMethod::AllExceptOldest),
-        "hard" => Ok(DeleteMethod::HardLink),
-        "on" => Ok(DeleteMethod::OneNewest),
-        "oo" => Ok(DeleteMethod::OneOldest),
-        "aeb" => Ok(DeleteMethod::AllExceptBiggest),
-        "aes" => Ok(DeleteMethod::AllExceptSmallest),
-        "ob" => Ok(DeleteMethod::OneBiggest),
-        "os" => Ok(DeleteMethod::OneSmallest),
-        _ => Err("Couldn't parse the delete method (allowed: AEN, AEO, ON, OO, HARD, AEB, AES, OB, OS)"),
-    }
-}
-
-fn parse_minimal_file_size(src: &str) -> Result<u64, String> {
-    match src.parse::<u64>() {
-        Ok(minimal_file_size) => {
-            if minimal_file_size > 0 {
-                Ok(minimal_file_size)
-            } else {
-                Err("Minimum file size must be at least 1 byte".to_string())
-            }
-        }
-        Err(e) => Err(e.to_string()),
-    }
-}
-
-fn parse_maximal_file_size(src: &str) -> Result<u64, String> {
-    match src.parse::<u64>() {
-        Ok(maximal_file_size) => Ok(maximal_file_size),
-        Err(e) => Err(e.to_string()),
-    }
-}
-
-fn parse_similar_image_filter(src: &str) -> Result<FilterType, String> {
-    let filter_type = match src.to_lowercase().as_str() {
-        "lanczos3" => FilterType::Lanczos3,
-        "nearest" => FilterType::Nearest,
-        "triangle" => FilterType::Triangle,
-        "gaussian" => FilterType::Gaussian,
-        "catmullrom" => FilterType::CatmullRom,
-        _ => return Err("Couldn't parse the image resize filter (allowed: Lanczos3, Nearest, Triangle, Gaussian, Catmullrom)".to_string()),
-    };
-    Ok(filter_type)
-}
-
-fn parse_similar_hash_algorithm(src: &str) -> Result<HashAlg, String> {
-    let algorithm = match src.to_lowercase().as_str() {
-        "mean" => HashAlg::Mean,
-        "gradient" => HashAlg::Gradient,
-        "blockhash" => HashAlg::Blockhash,
-        "vertgradient" => HashAlg::VertGradient,
-        "doublegradient" => HashAlg::DoubleGradient,
-        "median" => HashAlg::Median,
-        _ => return Err("Couldn't parse the hash algorithm (allowed: Mean, Gradient, Blockhash, VertGradient, DoubleGradient, Median)".to_string()),
-    };
-    Ok(algorithm)
-}
-
-fn parse_image_hash_size(src: &str) -> Result<u8, String> {
-    let hash_size = match src.to_lowercase().as_str() {
-        "8" => 8,
-        "16" => 16,
-        "32" => 32,
-        "64" => 64,
-        _ => return Err("Couldn't parse the image hash size (allowed: 8, 16, 32, 64)".to_string()),
-    };
-    Ok(hash_size)
-}
-
-fn parse_music_duplicate_type(src: &str) -> Result<MusicSimilarity, String> {
-    if src.trim().is_empty() {
-        return Ok(MusicSimilarity::NONE);
-    }
-
-    let mut similarity: MusicSimilarity = MusicSimilarity::NONE;
-
-    let parts: Vec<String> = src.split(',').map(|e| e.to_lowercase().replace('_', "")).collect();
-
-    if parts.contains(&"tracktitle".into()) {
-        similarity |= MusicSimilarity::TRACK_TITLE;
-    }
-    if parts.contains(&"trackartist".into()) {
-        similarity |= MusicSimilarity::TRACK_ARTIST;
-    }
-    if parts.contains(&"year".into()) {
-        similarity |= MusicSimilarity::YEAR;
-    }
-    if parts.contains(&"bitrate".into()) {
-        similarity |= MusicSimilarity::BITRATE;
-    }
-    if parts.contains(&"genre".into()) {
-        similarity |= MusicSimilarity::GENRE;
-    }
-    if parts.contains(&"length".into()) {
-        similarity |= MusicSimilarity::LENGTH;
-    }
-
-    if similarity == MusicSimilarity::NONE {
-        return Err("Couldn't parse the music search method (allowed: track_title,track_artist,year,bitrate,genre,length)".to_string());
-    }
-
-    Ok(similarity)
-}
-
-fn parse_crop_mechanism(src: &str) -> Result<String, String> {
-    match src.to_lowercase().as_str() {
-        "blackbars" | "staticcontent" => Ok(src.to_lowercase()),
-        _ => Err("Invalid crop mechanism. Allowed values: blackbars, staticcontent".to_string()),
-    }
-}
-
-fn parse_noise_reduction(src: &str) -> Result<NoiseReductionMethod, String> {
-    src.parse::<NoiseReductionMethod>()
-}
 
 const HELP_TEMPLATE: &str = r#"
 {bin} {version}

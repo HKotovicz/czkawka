@@ -3,7 +3,7 @@ name = "czkawka_core"
 version = "11.0.1"
 authors = ["Rafał Mikrut <mikrutrafal@protonmail.com>"]
 edition = "2024"
-rust-version = "1.92.0"
+rust-version = "1.94.1"
 description = "Core of Czkawka app"
 license = "MIT"
 homepage = "https://github.com/qarmin/czkawka"
@@ -34,11 +34,22 @@ lofty = "0.24"
 
 # Needed by broken files
 zip = { version = "8.1", features = ["aes-crypto", "bzip2", "deflate", "time"], default-features = false }
-lopdf = "0.40.0"
+lopdf = "0.41.0"
+sevenz-rust2 = "0.21.0"
+flate2 = { version = "1.1", default-features = false, features = ["rust_backend"] }
+tar = { version = "0.4", default-features = false }
+ruzstd = "0.8"
+ttf-parser = "0.25"
+quick-xml = "0.40"
+toml = { version = "1.1", default-features = false, features = ["parse", "serde"] }
+yaml-rust2 = "0.11"
+usvg = { version = "0.47", default-features = false }
+bzip2-rs = "0.1"
+lzma-rs = "0.3"
 
 # Needed by audio similarity feature
 rusty-chromaprint = "0.3"
-symphonia = { version = "0.5", features = ["all"] }
+symphonia = { version = "0.6", features = ["all"] }
 
 # Hashes for duplicate files
 blake3 = "1.5"
@@ -48,7 +59,7 @@ xxhash-rust = { version = "0.8", features = ["xxh3"] }
 tempfile = "3.13"
 
 # Video Duplicates
-vid_dup_finder_lib = "0.4"
+similario_core = "0.1.0"
 filetime = "0.2.26"
 
 # For extracting video properties using ffprobe CLI
@@ -78,7 +89,6 @@ infer = "0.19"
 # Newer version of libheif-rs, which is not compatible with Ubuntu 22.04, and works only o
 libheif-rs = { version = "2", optional = true, default-features = false, features = ["v1_17", "image"] }
 
-nom-exif = "2.1.0"
 
 # EXIF data cleaning
 little_exif = "0.6.20"
@@ -89,7 +99,7 @@ os_info = { version = "3", default-features = false }
 log = "0.4.22"
 handsome_logger = "0.9"
 fun_time = { version = "0.3", features = ["log"] }
-itertools = "0.14"
+itertools = "0.15"
 static_assertions = "1.1.0"
 file-rotate = "0.8.0"
 
@@ -116,10 +126,15 @@ glibc_musl_version = "0.1.0"
 
 [dev-dependencies]
 criterion =  { version = "0.8", default-features = false, features = [] }
+rand = "0.10.0"
 
 [[bench]]
 name = "hash_calculation_benchmark"
 harness = false
+
+#[[bench]]
+#name = "similar_images_hash_benchmark"
+#harness = false
 
 [features]
 default = []

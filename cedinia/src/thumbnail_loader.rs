@@ -1,4 +1,3 @@
-use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -65,7 +64,7 @@ pub fn thumbnail_cache_dir() -> PathBuf {
 }
 
 fn cache_key(path: &str, mtime_secs: u64, file_size: u64) -> String {
-    let mut h = DefaultHasher::new();
+    let mut h = xxhash_rust::xxh3::Xxh3::new();
     path.hash(&mut h);
     mtime_secs.hash(&mut h);
     file_size.hash(&mut h);
@@ -170,13 +169,19 @@ pub fn load_and_resize_thumbnail(path: &str, cache_dir: &Path) -> Option<(Vec<u8
 pub fn collect_thumb_tasks(items: &[FileItem]) -> Vec<(usize, usize, String)> {
     use crate::common::{STR_IDX_NAME, STR_IDX_PATH};
     let mut tasks = Vec::new();
+    // Advance group_idx lazily on the first item of a run, to mirror `build_gallery_groups` skipping empty groups.
     let mut group_idx: i32 = -1;
     let mut item_idx = 0usize;
+    let mut group_has_items = false;
     for item in items {
         if item.is_header {
-            group_idx += 1;
+            group_has_items = false;
             item_idx = 0;
-        } else if group_idx >= 0 {
+        } else {
+            if !group_has_items {
+                group_idx += 1;
+                group_has_items = true;
+            }
             let name = &item.val_str[STR_IDX_NAME];
             let path = &item.val_str[STR_IDX_PATH];
             let full = if path.is_empty() { name.clone() } else { format!("{path}/{name}") };
@@ -239,6 +244,10 @@ pub fn spawn_thumbnail_loader(tasks: Vec<(usize, usize, String)>, tx: std::sync:
                     let data = if cur >= limit {
                         ThumbnailData::Placeholder
                     } else {
+                        // Re-check right before the expensive decode so a superseded loader doesn't burn CPU/IO.
+                        if cancel.load(Ordering::Relaxed) {
+                            break;
+                        }
                         match load_and_resize_thumbnail(path, &cache_dir) {
                             Some((rgba, w, h)) => {
                                 let size = rgba.len() as u64;
@@ -253,6 +262,10 @@ pub fn spawn_thumbnail_loader(tasks: Vec<(usize, usize, String)>, tx: std::sync:
                             None => ThumbnailData::Placeholder,
                         }
                     };
+
+                    if cancel.load(Ordering::Relaxed) {
+                        break;
+                    }
 
                     if tx
                         .send(ThumbnailResult {
