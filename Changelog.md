@@ -1,3 +1,13 @@
+## Version 12.1.0 - 23.09.2026r
+
+### Core
+- Added a new image optimizer tool that compresses and converts images (e.g. to WebP) with optional metadata preservation
+- Added support for selecting a hardware decoder independent of the hardware encoder in the video optimizer
+
+### Krokiet
+- Added an image optimizer screen with per-file results (size, dimensions, format)
+- Added the ability to select/unselect results by file type
+
 ## Version 12.0.2 - 09.09.2026r
 
 ### Core
