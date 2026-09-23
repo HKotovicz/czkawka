@@ -89,7 +89,7 @@ impl ImageOptimizer {
                     return None;
                 }
                 match optimize_single_image(&entry.path, entry.size, &params) {
-                    Ok(_) => Some(None),
+                    Ok(()) => Some(None),
                     Err(e) => Some(Some(flc!("core_failed_to_optimize_image", file = entry.path.to_string_lossy(), reason = e))),
                 }
             })
@@ -186,7 +186,8 @@ pub fn optimize_single_image(input_path: &Path, _original_size: u64, params: &Im
                 copy_exif_metadata(input_path, &output_path);
             }
             let final_path = input_path.with_extension(&ext);
-            std::fs::remove_file(input_path).ok();
+            // Best-effort removal; if it fails the rename below surfaces the error.
+            let _ = std::fs::remove_file(input_path);
             std::fs::rename(&output_path, &final_path).map_err(|e| flc!("core_failed_to_replace_original", file = final_path.to_string_lossy(), reason = e.to_string()))?;
         } else {
             std::fs::rename(&output_path, input_path).map_err(|e| flc!("core_failed_to_replace_original", file = input_path.to_string_lossy(), reason = e.to_string()))?;
@@ -211,9 +212,8 @@ fn copy_exif_metadata(source: &Path, dest: &Path) {
         return;
     };
     let mut cursor = std::io::Cursor::new(&file_data);
-    let ext = match little_exif::filetype::FileExtension::auto_detect(&mut cursor) {
-        Some(e) => e,
-        None => return,
+    let Some(ext) = little_exif::filetype::FileExtension::auto_detect(&mut cursor) else {
+        return;
     };
     if metadata.write_to_vec(&mut file_data, ext).is_ok() {
         let _ = std::fs::write(dest, &file_data);

@@ -65,7 +65,7 @@ impl ModelProcessor {
 
                 let params = ImageOptimizerParams::new(target_format, quality, overwrite_files).with_metadata_preservation(preserve_metadata);
 
-                czkawka_core::tools::image_optimizer::core::optimize_single_image(&std::path::PathBuf::from(&full_path), original_size, &params).map_err(|e| format!("{e}"))
+                czkawka_core::tools::image_optimizer::core::optimize_single_image(&std::path::PathBuf::from(&full_path), original_size, &params)
             };
 
             self.process_and_update_gui_state(

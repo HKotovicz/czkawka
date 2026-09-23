@@ -98,5 +98,5 @@ fn prepare_data_model_image_optimizer(entry: &ImageOptimizerEntry) -> (ModelRc<i
     ];
     let data_model_int = VecModel::from_slice(&data_model_int_arr);
 
-    (data_model_int.into(), data_model_str.into())
+    (data_model_int, data_model_str)
 }
