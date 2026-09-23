@@ -1,7 +1,10 @@
 pub mod core;
+mod encoding;
 #[cfg(test)]
 mod tests;
 pub mod traits;
+
+pub use self::encoding::{HardwareEncoder, NoiseReductionMethod, VideoCodec};
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};

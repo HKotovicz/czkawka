@@ -16,7 +16,7 @@ use czkawka_core::tools::similar_videos::{
     DEFAULT_DURATION_TOLERANCE_PCT, DEFAULT_MIN_MATCHING_WINDOWS, DEFAULT_SKIP_FORWARD_AMOUNT, DEFAULT_SUBCLIP_MIN_MATCH, DEFAULT_THUMBNAIL_GRID_TILES_PER_SIDE,
     DEFAULT_VIDEO_PERCENTAGE_FOR_THUMBNAIL, DEFAULT_WINDOW_COUNT,
 };
-use czkawka_core::tools::video_optimizer::{NoiseReductionMethod, VideoCodec};
+use czkawka_core::tools::video_optimizer::{HardwareEncoder, NoiseReductionMethod, VideoCodec};
 use log::error;
 
 use crate::parsers::{
@@ -24,7 +24,7 @@ use crate::parsers::{
     parse_checking_method_same_music, parse_crop_mechanism, parse_delete_method, parse_duration_tolerance_pct, parse_geometric_invariance, parse_hash_type, parse_image_hash_size,
     parse_match_fraction, parse_max_samples, parse_maximal_file_size, parse_maximum_difference, parse_min_crop_size, parse_minimal_file_size, parse_minimum_segment_duration,
     parse_music_duplicate_type, parse_noise_reduction, parse_scan_duration, parse_similar_hash_algorithm, parse_similar_image_filter, parse_skip_forward_amount, parse_tolerance,
-    parse_video_codec, parse_window_count,
+    parse_hardware_encoder, parse_video_codec, parse_window_count,
 };
 
 #[cfg(not(feature = "no_colors"))]

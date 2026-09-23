@@ -8,7 +8,7 @@ use czkawka_core::tools::similar_videos::{
     ALLOWED_AUDIO_LENGTH_RATIO, ALLOWED_AUDIO_SIMILARITY_PERCENT, ALLOWED_DURATION_TOLERANCE_PCT, ALLOWED_MATCH_FRACTION, ALLOWED_SKIP_FORWARD_AMOUNT, ALLOWED_VID_HASH_DURATION,
     ALLOWED_WINDOW_COUNT,
 };
-use czkawka_core::tools::video_optimizer::{NoiseReductionMethod, VideoCodec};
+use czkawka_core::tools::video_optimizer::{HardwareEncoder, NoiseReductionMethod, VideoCodec};
 
 /// Values above this threshold are practically meaningless for audio segment matching
 const MAX_SAME_MUSIC_DIFFERENCE: f64 = 10.0;
@@ -192,6 +192,18 @@ pub(crate) fn parse_video_codec(src: &str) -> Result<VideoCodec, &'static str> {
         "av1" => Ok(VideoCodec::Av1),
         "vp9" => Ok(VideoCodec::Vp9),
         _ => Err("Couldn't parse the video codec (allowed: h264, h265, av1, vp9)"),
+    }
+}
+
+pub(crate) fn parse_hardware_encoder(src: &str) -> Result<HardwareEncoder, &'static str> {
+    match src.to_ascii_lowercase().as_str() {
+        "none" => Ok(HardwareEncoder::None),
+        "nvenc" => Ok(HardwareEncoder::Nvenc),
+        "vaapi" => Ok(HardwareEncoder::Vaapi),
+        "qsv" => Ok(HardwareEncoder::Qsv),
+        "videotoolbox" => Ok(HardwareEncoder::VideoToolbox),
+        "amf" => Ok(HardwareEncoder::Amf),
+        _ => Err("Couldn't parse the hardware encoder (allowed: none, nvenc, vaapi, qsv, videotoolbox, amf)"),
     }
 }
 

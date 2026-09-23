@@ -80,6 +80,53 @@ impl HardwareEncoder {
         &[Self::Nvenc, Self::Vaapi, Self::Qsv, Self::VideoToolbox, Self::Amf]
     }
 
+    /// Returns the ffmpeg `-hwaccel` method for hardware-accelerated **decoding**.
+    ///
+    /// When a hardware encoder is selected, adding `-hwaccel` before the input file
+    /// lets ffmpeg decode the source on the GPU instead of the CPU. This cuts total
+    /// transcode time roughly in half for most real-world videos.
+    ///
+    /// Returns `None` for `HardwareEncoder::None` (no hardware encoder selected).
+    pub const fn hwaccel_method(self) -> Option<&'static str> {
+        match self {
+            Self::None => None,
+            Self::Nvenc => Some("cuda"),
+            Self::Vaapi => Some("vaapi"),
+            Self::Qsv => Some("qsv"),
+            Self::VideoToolbox => Some("videotoolbox"),
+            Self::Amf => Some("d3d11va"),
+        }
+    }
+
+    /// Returns the ffmpeg `-hwaccel_output_format` value so decoded frames stay
+    /// in GPU memory and can be fed directly to the hardware encoder without a
+    /// costly GPU-CPU-GPU round-trip.
+    ///
+    /// Returns `None` when the output format is not applicable (e.g. for
+    /// `d3d11va` where the optimal format depends on the GPU vendor / driver).
+    pub const fn hwaccel_output_format(self) -> Option<&'static str> {
+        match self {
+            Self::None | Self::Amf => None,
+            Self::Nvenc => Some("cuda"),
+            Self::Vaapi => Some("vaapi"),
+            Self::Qsv => Some("qsv"),
+            Self::VideoToolbox => Some("videotoolbox"),
+        }
+    }
+
+    /// Returns the minimum frame width supported by the hardware encoder.
+    ///
+    /// NVENC H.264 requires >=145 px; H.265/AV1 NVENC accept 65 px.
+    /// VAAPI, QSV, AMF, and VideoToolbox typically accept 64 px, though
+    /// some driver versions may require larger frames.
+    pub const fn min_width(self) -> Option<u32> {
+        match self {
+            Self::None => None,
+            Self::Nvenc => Some(145),
+            _ => Some(64),
+        }
+    }
+
     /// Returns encoder-specific quality arguments for the given quality value.
     ///
     /// Each hardware encoder family uses a different rate-control mechanism:
