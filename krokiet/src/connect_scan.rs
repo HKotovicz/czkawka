@@ -14,6 +14,7 @@ mod similar_images;
 mod similar_videos;
 mod temporary_files;
 mod video_optimizer;
+mod image_optimizer;
 
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -44,6 +45,7 @@ use crate::connect_scan::similar_images::scan_similar_images;
 use crate::connect_scan::similar_videos::scan_similar_videos;
 use crate::connect_scan::temporary_files::scan_temporary_files;
 use crate::connect_scan::video_optimizer::scan_video_optimizer;
+use crate::connect_scan::image_optimizer::scan_image_optimizer;
 use crate::settings::model::{BasicSettings, ComboBoxItems, SettingsCustom};
 use crate::settings::{collect_base_settings, collect_combo_box_settings, collect_settings};
 use crate::shared_models::SharedModels;
@@ -131,6 +133,7 @@ pub(crate) fn connect_scan_button(
             ActiveTab::TemporaryFiles => scan_temporary_files(a, scan_data),
             ActiveTab::ExifRemover => scan_exif_remover(a, scan_data),
             ActiveTab::VideoOptimizer => scan_video_optimizer(a, scan_data),
+            ActiveTab::ImageOptimizer => scan_image_optimizer(a, scan_data),
             ActiveTab::Settings | ActiveTab::About => panic!("Button should be disabled"),
         }
     });

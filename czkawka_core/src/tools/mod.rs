@@ -12,3 +12,4 @@ pub mod similar_images;
 pub mod similar_videos;
 pub mod temporary;
 pub mod video_optimizer;
+pub mod image_optimizer;

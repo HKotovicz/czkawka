@@ -33,6 +33,7 @@ pub enum MessageType {
     Hardlink,
     Symlink,
     OptimizeVideo,
+    OptimizeImage,
     CleanExif,
 }
 
@@ -45,6 +46,7 @@ impl MessageType {
             Self::Hardlink => flk!("rust_no_files_hardlinked"),
             Self::Symlink => flk!("rust_no_files_symlinked"),
             Self::OptimizeVideo => flk!("rust_no_videos_optimized"),
+            Self::OptimizeImage => flk!("rust_no_images_optimized"),
             Self::CleanExif => flk!("rust_no_exif_cleaned"),
         }
     }
@@ -56,6 +58,7 @@ impl MessageType {
             Self::Hardlink => flk!("rust_hardlink_summary", hardlinked = processed, failed = failed, total = total),
             Self::Symlink => flk!("rust_symlink_summary", symlinked = processed, failed = failed, total = total),
             Self::OptimizeVideo => flk!("rust_optimize_video_summary", optimized = processed, failed = failed, total = total),
+            Self::OptimizeImage => flk!("rust_optimize_image_summary", optimized = processed, failed = failed, total = total),
             Self::CleanExif => flk!("rust_clean_exif_summary", cleaned = processed, failed = failed, total = total),
         }
     }
@@ -67,6 +70,7 @@ impl MessageType {
             Self::Hardlink => ToolStage::HardlinkingFiles,
             Self::Symlink => ToolStage::SymlinkingFiles,
             Self::OptimizeVideo => ToolStage::OptimizingVideos,
+            Self::OptimizeImage => ToolStage::OptimizingVideos,
             Self::CleanExif => ToolStage::CleaningExif,
         };
         ProgressData::new(stage, 0, 0)
@@ -79,6 +83,7 @@ impl MessageType {
             Self::Hardlink => "hardlink",
             Self::Symlink => "symlink",
             Self::OptimizeVideo => "optimize_video",
+            Self::OptimizeImage => "optimize_image",
             Self::CleanExif => "clean_exif",
         }
     }

@@ -339,6 +339,31 @@ pub enum StrDataVideoOptimizer {
 }
 pub const MAX_STR_DATA_VIDEO_OPTIMIZER: usize = StrDataVideoOptimizer::PreviewPath as usize + 1;
 
+// Image Optimizer
+#[repr(u8)]
+#[derive(Debug, Eq, PartialEq, TryFromPrimitive)]
+pub enum IntDataImageOptimizer {
+    ModificationDatePart1,
+    ModificationDatePart2,
+    SizePart1,
+    SizePart2,
+    Width,
+    Height,
+}
+pub const MAX_INT_DATA_IMAGE_OPTIMIZER: usize = IntDataImageOptimizer::Height as usize + 1;
+
+#[repr(u8)]
+#[derive(Debug, Eq, PartialEq, TryFromPrimitive)]
+pub enum StrDataImageOptimizer {
+    Size,
+    Name,
+    Path,
+    Format,
+    Dimensions,
+    ModificationDate,
+}
+pub const MAX_STR_DATA_IMAGE_OPTIMIZER: usize = StrDataImageOptimizer::ModificationDate as usize + 1;
+
 pub(crate) enum SortIdx {
     StrIdx(i32),
     IntIdx(i32),
@@ -454,6 +479,7 @@ impl ActiveTab {
                 StrDataVideoOptimizer::NewDimensions => SortIdx::IntIdx(IntDataVideoOptimizer::DiffInPixels as i32),
             },
             Self::Settings | Self::About => panic!("Button should be disabled"),
+            Self::ImageOptimizer => todo!(),
         }
     }
 
@@ -474,6 +500,7 @@ impl ActiveTab {
             Self::BadNames => StrDataBadNames::Path as usize,
             Self::ExifRemover => StrDataExifRemover::Path as usize,
             Self::VideoOptimizer => StrDataVideoOptimizer::Path as usize,
+            Self::ImageOptimizer => StrDataImageOptimizer::Path as usize,
             Self::Settings | Self::About => panic!("Button should be disabled"),
         }
     }
@@ -494,6 +521,7 @@ impl ActiveTab {
             Self::BadNames => StrDataBadNames::Name as usize,
             Self::ExifRemover => StrDataExifRemover::Name as usize,
             Self::VideoOptimizer => StrDataVideoOptimizer::Name as usize,
+            Self::ImageOptimizer => StrDataImageOptimizer::Name as usize,
             Self::Settings | Self::About => panic!("Button should be disabled"),
         }
     }
@@ -503,6 +531,31 @@ impl ActiveTab {
             Self::BadExtensions => StrDataBadExtensions::ProperExtension as usize,
             Self::Settings | Self::About => panic!("Button should be disabled"),
             _ => panic!("Unable to get proper extension from this tab"),
+        }
+    }
+
+    /// Returns the str column index for the "file type" / format / codec column.
+    /// For most tabs this extracts the extension from the file name at runtime,
+    /// but for tabs that already have a dedicated type column (codec, format, error type),
+    /// returns that instead.
+    pub(crate) fn get_str_file_type_idx(self) -> Option<usize> {
+        match self {
+            Self::BadExtensions => Some(StrDataBadExtensions::CurrentExtension as usize),
+            Self::SimilarVideos => Some(StrDataSimilarVideos::Codec as usize),
+            Self::VideoOptimizer => Some(StrDataVideoOptimizer::Codec as usize),
+            Self::ImageOptimizer => Some(StrDataImageOptimizer::Format as usize),
+            Self::BrokenFiles => Some(StrDataBrokenFiles::TypeOfError as usize),
+            Self::EmptyFolders
+            | Self::EmptyFiles
+            | Self::BigFiles
+            | Self::TemporaryFiles
+            | Self::DuplicateFiles
+            | Self::SimilarImages
+            | Self::SimilarMusic
+            | Self::InvalidSymlinks
+            | Self::BadNames
+            | Self::ExifRemover => None,
+            Self::Settings | Self::About => panic!("Button should be disabled"),
         }
     }
     pub(crate) fn get_int_modification_date_idx(self) -> usize {
@@ -521,6 +574,7 @@ impl ActiveTab {
             Self::BadNames => IntDataBadNames::ModificationDatePart1 as usize,
             Self::ExifRemover => IntDataExifRemover::ModificationDatePart1 as usize,
             Self::VideoOptimizer => IntDataVideoOptimizer::ModificationDatePart1 as usize,
+            Self::ImageOptimizer => IntDataImageOptimizer::ModificationDatePart1 as usize,
             Self::Settings | Self::About => panic!("Button should be disabled"),
         }
     }
@@ -538,6 +592,7 @@ impl ActiveTab {
             Self::BadNames => IntDataBadNames::SizePart1 as usize,
             Self::ExifRemover => IntDataExifRemover::SizePart1 as usize,
             Self::VideoOptimizer => IntDataVideoOptimizer::SizePart1 as usize,
+            Self::ImageOptimizer => IntDataImageOptimizer::SizePart1 as usize,
             Self::Settings | Self::About | Self::EmptyFolders | Self::InvalidSymlinks => return None,
         };
         Some(res)
@@ -613,8 +668,7 @@ impl ActiveTab {
             | Self::BadExtensions
             | Self::BadNames
             | Self::ExifRemover
-            | Self::VideoOptimizer => false,
-            Self::SimilarImages | Self::DuplicateFiles | Self::SimilarVideos | Self::SimilarMusic => true,
+            | Self::VideoOptimizer => false,            Self::ImageOptimizer => false,            Self::SimilarImages | Self::DuplicateFiles | Self::SimilarVideos | Self::SimilarMusic => true,
             Self::Settings | Self::About => panic!("Button should be disabled"),
         }
     }
@@ -634,6 +688,7 @@ impl ActiveTab {
             Self::BadNames => app.get_bad_names_model(),
             Self::ExifRemover => app.get_exif_remover_model(),
             Self::VideoOptimizer => app.get_video_optimizer_model(),
+            Self::ImageOptimizer => app.get_image_optimizer_model(),
             Self::Settings | Self::About => panic!("Button should be disabled"),
         }
     }
@@ -654,6 +709,7 @@ impl ActiveTab {
             Self::BadNames => app.set_bad_names_model(model),
             Self::ExifRemover => app.set_exif_remover_model(model),
             Self::VideoOptimizer => app.set_video_optimizer_model(model),
+            Self::ImageOptimizer => app.set_image_optimizer_model(model),
             Self::Settings | Self::About => panic!("Button should be disabled"),
         }
     }

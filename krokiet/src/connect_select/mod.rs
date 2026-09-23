@@ -14,7 +14,7 @@ use crate::settings::model::{SavedCustomSelectColumnState, SavedCustomSelectTabS
 use crate::settings::{get_custom_select_state_file, load_data_from_file, save_data_to_file};
 use crate::shared_models::SharedModels;
 use crate::{
-    ActiveTab, Callabler, CustomSelectColumnModel, GuiState, MainWindow, SelectItemsCustomColumnsRequest, SelectMode, SelectModel, Settings, SingleMainListModel,
+    ActiveTab, Callabler, CustomSelectColumnModel, FileTypeSelectModel, GuiState, MainWindow, SelectItemsCustomColumnsRequest, SelectMode, SelectModel, Settings, SingleMainListModel,
     UpdateCustomSelectColumnRequest,
 };
 
@@ -60,7 +60,7 @@ pub(crate) fn connect_select(app: &MainWindow, shared_models: &Arc<Mutex<SharedM
             SelectMode::SelectAllExceptLongestPath => select_all_except_by_property(&current_model, active_tab, Property::PathLength, true),
             SelectMode::SelectAllExceptShortestPath => select_all_except_by_property(&current_model, active_tab, Property::PathLength, false),
 
-            SelectMode::SelectCustom => return,
+            SelectMode::SelectCustom | SelectMode::SelectByFileType => return,
         };
         active_tab.set_tool_model(&app, new_model);
         change_number_of_enabled_items(&app, active_tab, checked_items as i64 - unchecked_items as i64);
@@ -157,6 +157,70 @@ pub(crate) fn connect_select(app: &MainWindow, shared_models: &Arc<Mutex<SharedM
         active_tab.set_tool_model(&app, new_model);
         change_number_of_enabled_items(&app, active_tab, checked_items as i64 - unchecked_items as i64);
     });
+
+    let a = app.as_weak();
+    app.global::<Callabler>().on_populate_file_type_select(move || {
+        let app = a.upgrade().expect("Failed to upgrade app :(");
+        let active_tab = app.global::<GuiState>().get_active_tab();
+        let current_model = active_tab.get_tool_model(&app);
+        let file_type_idx = active_tab.get_str_file_type_idx();
+
+        let mut counts: BTreeMap<String, u64> = BTreeMap::new();
+        for item in current_model.iter() {
+            if item.header_row {
+                continue;
+            }
+            let type_str = match file_type_idx {
+                Some(idx) => {
+                    let s = item.val_str.iter().nth(idx).expect("file_type_idx out of bounds");
+                    s.to_string()
+                }
+                None => extract_extension_from_name(&item),
+            };
+            *counts.entry(type_str).or_insert(0) += 1;
+        }
+
+        let items: Vec<FileTypeSelectModel> = counts
+            .into_iter()
+            .map(|(file_type, count)| FileTypeSelectModel {
+                file_type: SharedString::from(file_type),
+                count: count as i32,
+                checked: false,
+            })
+            .collect();
+        app.global::<GuiState>().set_file_type_select_list(create_model_from_model_vec(&items));
+    });
+
+    let a = app.as_weak();
+    app.global::<Callabler>().on_toggle_file_type_select_item(move |idx| {
+        let app = a.upgrade().expect("Failed to upgrade app :(");
+        let model = app.global::<GuiState>().get_file_type_select_list();
+        let idx = idx as usize;
+        let mut item = model
+            .row_data(idx)
+            .unwrap_or_else(|| panic!("FileTypeSelectModel idx={idx} out of bounds (row_count={})", model.row_count()));
+        item.checked = !item.checked;
+        model.set_row_data(idx, item);
+    });
+
+    let a = app.as_weak();
+    app.global::<Callabler>().on_select_items_by_file_type(move |select_mode| {
+        let app = a.upgrade().expect("Failed to upgrade app :(");
+        let active_tab = app.global::<GuiState>().get_active_tab();
+        let current_model = active_tab.get_tool_model(&app);
+        let file_type_idx = active_tab.get_str_file_type_idx();
+        let checked_types: Vec<String> = app
+            .global::<GuiState>()
+            .get_file_type_select_list()
+            .iter()
+            .filter(|f| f.checked)
+            .map(|f| f.file_type.to_string())
+            .collect();
+
+        let (checked_items, unchecked_items, new_model) = select_by_file_type(&current_model, active_tab, file_type_idx, &checked_types, select_mode);
+        active_tab.set_tool_model(&app, new_model);
+        change_number_of_enabled_items(&app, active_tab, checked_items as i64 - unchecked_items as i64);
+    });
 }
 
 #[derive(Clone, Copy)]
@@ -170,7 +234,7 @@ enum Property {
 pub(crate) fn set_select_buttons(app: &MainWindow) {
     let active_tab = app.global::<GuiState>().get_active_tab();
     let settings = app.global::<Settings>();
-    let mut base_buttons = vec![SelectMode::SelectCustom, SelectMode::SelectAll, SelectMode::UnselectAll, SelectMode::InvertSelection];
+    let mut base_buttons = vec![SelectMode::SelectCustom, SelectMode::SelectByFileType, SelectMode::SelectAll, SelectMode::UnselectAll, SelectMode::InvertSelection];
 
     let additional_buttons = match active_tab {
         ActiveTab::DuplicateFiles | ActiveTab::SimilarVideos | ActiveTab::SimilarMusic => vec![
@@ -217,6 +281,7 @@ pub(crate) fn set_select_buttons(app: &MainWindow) {
         | ActiveTab::BadNames
         | ActiveTab::ExifRemover
         | ActiveTab::VideoOptimizer
+        | ActiveTab::ImageOptimizer
         | ActiveTab::Settings
         | ActiveTab::About => Vec::new(),
     };
@@ -449,6 +514,84 @@ fn find_header_idx_and_deselect_all(old_data: &mut [SingleMainListModel]) -> Vec
         }
     }
     header_idx
+}
+
+/// Extracts the lowercase file extension from the Name column.
+fn extract_extension_from_name(item: &SingleMainListModel) -> String {
+    let name_idx = 1; // Name is always at index 1 in val_str
+    let name = item.val_str.iter().nth(name_idx).expect("name idx out of bounds");
+    let name_str = name.as_str();
+    if let Some(dot_pos) = name_str.rfind('.') {
+        name_str.get(dot_pos + 1..).unwrap_or_default().to_lowercase()
+    } else {
+        String::new()
+    }
+}
+
+/// Selects or unselects items matching the checked file types.
+/// When `file_type_idx` is Some, uses that column directly; otherwise extracts extension from Name.
+fn select_by_file_type(
+    model: &ModelRc<SingleMainListModel>,
+    active_tab: ActiveTab,
+    file_type_idx: Option<usize>,
+    checked_types: &[String],
+    select_mode: bool,
+) -> SelectionResult {
+    let mut checked_items = 0u64;
+    let mut unchecked_items = 0u64;
+    let mut old_data = model.iter().collect::<Vec<_>>();
+    let is_header_mode = active_tab.get_is_header_mode();
+
+    let get_type = |item: &SingleMainListModel| -> String {
+        match file_type_idx {
+            Some(idx) => item.val_str.iter().nth(idx).expect("file_type_idx out of bounds").to_string(),
+            None => extract_extension_from_name(item),
+        }
+    };
+
+    if !is_header_mode {
+        for item in &mut old_data {
+            if item.header_row {
+                continue;
+            }
+            let matches = checked_types.contains(&get_type(item));
+            if select_mode {
+                if matches && !item.checked {
+                    item.checked = true;
+                    checked_items += 1;
+                }
+            } else if matches && item.checked {
+                item.checked = false;
+                unchecked_items += 1;
+            }
+        }
+    } else {
+        let headers_idx: Vec<usize> = old_data.iter().enumerate().filter_map(|(idx, m)| if m.header_row { Some(idx) } else { None }).collect();
+        for i in 0..headers_idx.len() {
+            let start_idx = headers_idx[i] + 1;
+            let end_idx = if i + 1 < headers_idx.len() { headers_idx[i + 1] } else { old_data.len() };
+            if start_idx >= end_idx {
+                continue;
+            }
+            for item in old_data.iter_mut().skip(start_idx).take(end_idx - start_idx) {
+                if item.header_row {
+                    continue;
+                }
+                let matches = checked_types.contains(&get_type(item));
+                if select_mode {
+                    if matches && !item.checked {
+                        item.checked = true;
+                        checked_items += 1;
+                    }
+                } else if matches && item.checked {
+                    item.checked = false;
+                    unchecked_items += 1;
+                }
+            }
+        }
+    }
+
+    (checked_items, unchecked_items, ModelRc::new(VecModel::from(old_data)))
 }
 
 #[cfg(test)]

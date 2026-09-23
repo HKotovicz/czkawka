@@ -15,6 +15,7 @@ use czkawka_core::tools::same_music::SameMusic;
 use czkawka_core::tools::similar_images::SimilarImages;
 use czkawka_core::tools::similar_videos::SimilarVideos;
 use czkawka_core::tools::temporary::Temporary;
+use czkawka_core::tools::image_optimizer::ImageOptimizer;
 use czkawka_core::tools::video_optimizer::VideoOptimizer;
 
 use crate::ActiveTab;
@@ -34,6 +35,7 @@ pub struct SharedModels {
     pub shared_bad_names_state: Option<BadNames>,
     pub shared_exif_remover_state: Option<ExifRemover>,
     pub shared_video_optimizer_state: Option<VideoOptimizer>,
+    pub shared_image_optimizer_state: Option<ImageOptimizer>,
 }
 
 impl SharedModels {
@@ -53,6 +55,7 @@ impl SharedModels {
             shared_bad_names_state: None,
             shared_exif_remover_state: None,
             shared_video_optimizer_state: None,
+            shared_image_optimizer_state: None,
         }
     }
 
@@ -77,6 +80,7 @@ impl SharedModels {
             ActiveTab::BadNames => self.shared_bad_names_state.as_ref().map(|x| x.save_all_in_one(cd, "results_bad_names")),
             ActiveTab::ExifRemover => self.shared_exif_remover_state.as_ref().map(|x| x.save_all_in_one(cd, "results_exif_remover")),
             ActiveTab::VideoOptimizer => self.shared_video_optimizer_state.as_ref().map(|x| x.save_all_in_one(cd, "results_video_optimizer")),
+            ActiveTab::ImageOptimizer => self.shared_image_optimizer_state.as_ref().map(|x| x.save_all_in_one(cd, "results_image_optimizer")),
             ActiveTab::Settings | ActiveTab::About => panic!("Cannot save results for settings or about tab"),
         };
 
@@ -107,6 +111,7 @@ impl SharedModels {
             ActiveTab::BadNames => self.shared_bad_names_state.as_ref().map(|e| e.get_use_reference_folders()),
             ActiveTab::ExifRemover => self.shared_exif_remover_state.as_ref().map(|e| e.get_use_reference_folders()),
             ActiveTab::VideoOptimizer => self.shared_video_optimizer_state.as_ref().map(|e| e.get_use_reference_folders()),
+            ActiveTab::ImageOptimizer => self.shared_image_optimizer_state.as_ref().map(|e| e.get_use_reference_folders()),
             ActiveTab::Settings | ActiveTab::About => panic!("Cannot get use reference folders for settings or about tab"),
         }
         .unwrap_or(false);

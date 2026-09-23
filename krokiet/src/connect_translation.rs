@@ -406,6 +406,10 @@ fn translate_items(app: &MainWindow) {
     translation.set_popup_custom_case_sensitive_text(flk!("popup_custom_case_sensitive_text").into());
     translation.set_popup_custom_leave_one_in_group_text(flk!("popup_custom_leave_one_in_group_text").into());
     translation.set_popup_custom_save_restore_text(flk!("popup_custom_save_restore_text").into());
+    translation.set_popup_select_by_file_type_title_text(flk!("popup_select_by_file_type_title_text").into());
+    translation.set_popup_select_by_file_type_header_text(flk!("popup_select_by_file_type_header_text").into());
+    translation.set_popup_select_by_file_type_select_text(flk!("popup_select_by_file_type_select_text").into());
+    translation.set_popup_select_by_file_type_unselect_text(flk!("popup_select_by_file_type_unselect_text").into());
 
     translation.set_compare_button_text(flk!("compare_button_text").into());
     translation.set_compare_back_text(flk!("compare_back_text").into());
@@ -457,6 +461,7 @@ fn translate_items(app: &MainWindow) {
         (flk!("tool_bad_names").into(), ActiveTab::BadNames),
         (flk!("tool_exif_remover").into(), ActiveTab::ExifRemover),
         (flk!("tool_video_optimizer").into(), ActiveTab::VideoOptimizer),
+        (flk!("tool_image_optimizer").into(), ActiveTab::ImageOptimizer),
     ];
     let gui_state = app.global::<GuiState>();
     gui_state.set_tools_model(ModelRc::new(VecModel::from(tools_model.to_vec())));
@@ -550,6 +555,7 @@ pub(crate) fn translate_select_mode(select_mode: SelectMode) -> SharedString {
         SelectMode::SelectAllExceptLongestPath => flk!("selection_all_except_longest_path").into(),
         SelectMode::SelectAllExceptShortestPath => flk!("selection_all_except_shortest_path").into(),
         SelectMode::SelectCustom => flk!("selection_custom_select_unselect").into(),
+        SelectMode::SelectByFileType => flk!("selection_by_file_type").into(),
     }
 }
 

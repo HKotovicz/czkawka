@@ -16,6 +16,7 @@ import { PopupTrash } from "popups/popup_trash.slint";
 import { PopupMoveFolders } from "popups/popup_move_folders.slint";
 import { PopupSelectResults } from "popups/popup_select_results.slint";
 import { PopupCustomSelect } from "popups/popup_custom_select.slint";
+import { PopupSelectByFileType } from "popups/popup_select_by_file_type.slint";
 import { PopupRenameBadExtensions } from "popups/popup_rename_bad_extensions.slint";
 import { PopupRenameBadFileNames } from "popups/popup_rename_bad_file_names.slint";
 import { PopupRenameFile } from "popups/popup_rename_file.slint";
@@ -25,6 +26,7 @@ import { PopupSortResults } from "popups/popup_sort.slint";
 import { PopupActionConfirm } from "popups/popup_action_confirm.slint";
 import { PopupCropVideo } from "popups/popup_crop_video.slint";
 import { PopupReencodeVideo } from "popups/popup_optimize.slint";
+import { PopupOptimizeImage } from "popups/popup_optimize_image.slint";
 import { PopupCleanExif } from "popups/popup_clean_exif.slint";
 import { PopupCleanCache } from "popups/popup_clean_cache.slint";
 import { PopupOtherApps } from "popups/popup_other_apps.slint";
@@ -83,6 +85,7 @@ export component MainWindow inherits Window {
     in-out property <[SingleMainListModel]> bad_names_model: [];
     in-out property <[SingleMainListModel]> exif_remover_model: [];
     in-out property <[SingleMainListModel]> video_optimizer_model: [];
+    in-out property <[SingleMainListModel]> image_optimizer_model: [];
 
     VerticalBox {
         HorizontalBox {
@@ -121,6 +124,7 @@ export component MainWindow inherits Window {
                         bad_names_model <=> root.bad_names_model;
                         exif_remover_model <=> root.exif_remover_model;
                         video_optimizer_model <=> root.video_optimizer_model;
+                        image_optimizer_model <=> root.image_optimizer_model;
 
                         show_clean_cache_popup() => {
                             clean_cache_popup_window.show_popup();
@@ -174,6 +178,7 @@ export component MainWindow inherits Window {
             bad_names_model <=> root.bad_names_model;
             exif_remover_model <=> root.exif_remover_model;
             video_optimizer_model <=> root.video_optimizer_model;
+            image_optimizer_model <=> root.image_optimizer_model;
 
             vertical-stretch: 0.0;
             scanning <=> root.scanning;
@@ -251,6 +256,16 @@ export component MainWindow inherits Window {
         open_custom_select_popup() => {
             custom_select_popup_window.show_popup();
         }
+        open_file_type_select_popup() => {
+            file_type_select_popup_window.show_popup();
+        }
+    }
+
+    file_type_select_popup_window := PopupSelectByFileType {
+        height: root.height;
+        width: root.width;
+        x: parent.x + (root.width - self.popup_width) / 2.0;
+        y: parent.y + (parent.height - self.popup_height) / 2.0;
     }
 
     custom_select_popup_window := PopupCustomSelect {
@@ -369,6 +384,19 @@ export component MainWindow inherits Window {
         }
     }
 
+    optimize_image_popup_window := PopupOptimizeImage {
+        height: root.height;
+        width: root.width;
+        title_text: Translations.optimize_images_text;
+
+        x: parent.x + (root.width - self.popup_width) / 2.0;
+        y: parent.y + (parent.height - self.popup_height) / 2.0;
+
+        action_confirmed() => {
+            Callabler.optimize_image_items();
+        }
+    }
+
     hardlink_popup_window := PopupActionConfirm {
         height: root.height;
         width: root.width;
@@ -480,6 +508,8 @@ export component MainWindow inherits Window {
             } else {
                 reencode_video_popup_window.show_popup();
             }
+        } else if (request == PopupRequest.OptimizeImage) {
+            optimize_image_popup_window.show_popup();
         } else if (request == PopupRequest.Symlink) {
             softlink_popup_window.show_popup();
         } else if (request == PopupRequest.RenameBadExtension) {

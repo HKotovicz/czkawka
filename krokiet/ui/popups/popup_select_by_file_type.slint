@@ -1,0 +1,122 @@
+import { Button, CheckBox, ScrollView } from "std-widgets.slint";
+import { Callabler } from "../globals/callabler.slint";
+import { Translations } from "../globals/translations.slint";
+import { ColorPalette } from "../globals/color_palette.slint";
+import { FontSizes } from "../globals/fonts.slint";
+import { FileTypeSelectModel } from "../globals/common.slint";
+import { GuiState } from "../globals/gui_state.slint";
+
+export component PopupSelectByFileType inherits Rectangle {
+    out property <length> popup_width: 400px;
+    out property <length> popup_height: 400px;
+    callback show_popup();
+
+    popup_window := PopupWindow {
+        width: popup_width;
+        height: popup_height;
+        close-policy: PopupClosePolicy.no-auto-close;
+        Rectangle {
+            width: parent.width;
+            height: parent.height;
+            border-radius: 10px;
+            border-color: ColorPalette.popup_border_color;
+            border-width: 2px;
+            background: ColorPalette.popup_background;
+            clip: true;
+            VerticalLayout {
+                // Title bar
+                Rectangle {
+                    background: ColorPalette.popup_background_title_line;
+                    height: 34px;
+                    Text {
+                        text: Translations.popup_select_by_file_type_title_text;
+                        vertical-alignment: center;
+                        horizontal-alignment: center;
+                        font-size: FontSizes.normal;
+                    }
+                }
+                // Column header
+                HorizontalLayout {
+                    height: 24px;
+                    padding-left: 10px;
+                    padding-right: 10px;
+                    spacing: 4px;
+                    Rectangle { width: 32px; }
+                    Text {
+                        horizontal-stretch: 1.0;
+                        text: Translations.popup_select_by_file_type_header_text;
+                        font-size: FontSizes.small;
+                        vertical-alignment: center;
+                        color: ColorPalette.hint_color;
+                    }
+                }
+                // Scrollable file type rows
+                ScrollView {
+                    vertical-stretch: 1.0;
+                    VerticalLayout {
+                        padding: 4px;
+                        spacing: 2px;
+                        for item[idx] in GuiState.file_type_select_list: HorizontalLayout {
+                            height: 30px;
+                            padding-left: 6px;
+                            padding-right: 6px;
+                            spacing: 4px;
+                            alignment: stretch;
+                            CheckBox {
+                                width: 32px;
+                                checked: item.checked;
+                                toggled => {
+                                    Callabler.toggle_file_type_select_item(idx);
+                                }
+                            }
+                            Text {
+                                horizontal-stretch: 1.0;
+                                text: item.file_type;
+                                vertical-alignment: center;
+                                font-size: FontSizes.normal;
+                            }
+                            Text {
+                                width: 60px;
+                                text: item.count;
+                                vertical-alignment: center;
+                                horizontal-alignment: right;
+                                font-size: FontSizes.small;
+                                color: ColorPalette.hint_color;
+                            }
+                        }
+                    }
+                }
+                // Buttons
+                HorizontalLayout {
+                    height: 46px;
+                    padding: 8px;
+                    spacing: 8px;
+                    Button {
+                        text: Translations.popup_select_by_file_type_select_text;
+                        primary: true;
+                        clicked => {
+                            Callabler.select_items_by_file_type(true);
+                            popup_window.close();
+                        }
+                    }
+                    Button {
+                        text: Translations.popup_select_by_file_type_unselect_text;
+                        clicked => {
+                            Callabler.select_items_by_file_type(false);
+                            popup_window.close();
+                        }
+                    }
+                    Rectangle { horizontal-stretch: 1.0; }
+                    Button {
+                        text: Translations.cancel_button_text;
+                        clicked => { popup_window.close(); }
+                    }
+                }
+            }
+        }
+    }
+    show_popup() => {
+        Callabler.populate_file_type_select();
+        popup_window.show();
+    }
+}

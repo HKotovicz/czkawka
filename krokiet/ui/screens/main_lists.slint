@@ -37,6 +37,7 @@ export component MainList {
     in-out property <[SingleMainListModel]> bad_names_model: [];
     in-out property <[SingleMainListModel]> exif_remover_model: [];
     in-out property <[SingleMainListModel]> video_optimizer_model: [];
+    in-out property <[SingleMainListModel]> image_optimizer_model: [];
 
     callback changed_active_tab();
 
@@ -248,6 +249,19 @@ export component MainList {
         sort_available: !working;
     }
 
+    image_optimizer := SelectableTableView {
+        visible: GuiState.active_tab == ActiveTab.ImageOptimizer;
+        min-width: 200px;
+        height: parent.height;
+        columns <=> Settings.image_optimizer_column_name;
+        column_sizes <=> Settings.image_optimizer_column_size;
+        values <=> image_optimizer_model;
+        parentPathIdx: GuiState.image_optimizer_data_idx[0];
+        fileNameIdx: GuiState.image_optimizer_data_idx[1];
+        previewImageIdx: GuiState.image_optimizer_data_idx[2];
+        sort_available: !working;
+    }
+
     bad_names := SelectableTableView {
         visible: GuiState.active_tab == ActiveTab.BadNames;
         min-width: 200px;
@@ -307,6 +321,8 @@ export component MainList {
             exif_remover.reset_selection();
         } else if (active_tab == ActiveTab.VideoOptimizer) {
             video_optimizer.reset_selection();
+        } else if (active_tab == ActiveTab.ImageOptimizer) {
+            image_optimizer.reset_selection();
         } else if (active_tab == ActiveTab.BadNames) {
             bad_names.reset_selection();
         } else {
@@ -341,6 +357,8 @@ export component MainList {
             exif_remover.scan_started();
         } else if (GuiState.active_tab == ActiveTab.VideoOptimizer) {
             video_optimizer.scan_started();
+        } else if (GuiState.active_tab == ActiveTab.ImageOptimizer) {
+            image_optimizer.scan_started();
         } else if (GuiState.active_tab == ActiveTab.BadNames) {
             bad_names.scan_started();
         } else {

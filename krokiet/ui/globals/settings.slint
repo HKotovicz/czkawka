@@ -324,4 +324,14 @@ export global Settings {
     in-out property <[length]> exif_remover_column_size: [35px, size_px, name_px, path_px, 300px, mod_px];
     in-out property <[string]> video_optimizer_column_name: ["Selection", "Size", "File Name", "Path", "Codec", "Dimensions", "New Dimensions", "Modification Date"];
     in-out property <[length]> video_optimizer_column_size: [35px, size_px, name_px, path_px, 100px, 120px, 160px, mod_px];
+    in-out property <[string]> image_optimizer_column_name: ["Selection", "Size", "File Name", "Path", "Format", "Dimensions", "Modification Date"];
+    in-out property <[length]> image_optimizer_column_size: [35px, size_px, name_px, path_px, 80px, 120px, mod_px];
+
+    // Image Optimizer settings
+    in-out property <[string]> image_optimizer_sub_target_format_config: ["Same", "JPEG", "PNG", "WebP"];
+    in-out property <int>      image_optimizer_sub_target_format_index: 0;
+    in-out property <string>   image_optimizer_sub_target_format_value: "same";
+    in-out property <float>    image_optimizer_sub_quality: 80;
+    in-out property <bool>     popup_optimize_image_overwrite_files: false;
+    in-out property <bool>     popup_optimize_image_preserve_metadata: false;
 }

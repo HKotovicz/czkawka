@@ -114,6 +114,12 @@ pub(crate) fn connect_show_confirmation(app: &MainWindow, shared_models: Arc<Mut
                     "transcode".to_string()
                 }
             }
+            PopupRequest::OptimizeImage => {
+                let mut base = flk!("rust_optimize_image_confirmation");
+                base.push_str(format!("\n{}", flk!("rust_optimize_image_confirmation_number_simple", items = res.checked_items_number)).as_str());
+                translation.set_optimize_confirmation_text(base.into());
+                data = "image".to_string();
+            }
             PopupRequest::CleanExif => {
                 let mut base = flk!("rust_clean_exif_confirmation");
                 base.push_str(format!("\n{}", flk!("rust_clean_exif_confirmation_number_simple", items = res.checked_items_number)).as_str());

@@ -93,6 +93,9 @@ libheif-rs = { version = "2", optional = true, default-features = false, feature
 # EXIF data cleaning
 little_exif = "0.6.20"
 
+# WebP encoding (lossy + lossless)
+webp = { version = "0.3", default-features = false, features = ["img"] }
+
 dunce = "1.0.5"
 
 os_info = { version = "3", default-features = false }

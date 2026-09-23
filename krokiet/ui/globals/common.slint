@@ -13,6 +13,7 @@ export enum ActiveTab {
     BadNames,
     ExifRemover,
     VideoOptimizer,
+    ImageOptimizer,
     Settings,
     About
 }
@@ -23,6 +24,7 @@ export enum PopupRequest {
     Move,
     CleanExif,
     OptimizeVideo,
+    OptimizeImage,
     RenameBadExtension,
     RenameBadFileName,
     Symlink,
@@ -96,6 +98,7 @@ export enum SelectMode {
     SelectAllExceptLongestPath,
     SelectAllExceptShortestPath,
     SelectCustom,
+    SelectByFileType,
 }
 
 export struct SelectModel {
@@ -119,6 +122,12 @@ export struct CustomSelectColumnModel {
     is_pair: bool,
     enabled: bool,
     filter_value: string,
+}
+
+export struct FileTypeSelectModel {
+    file_type: string,
+    count: int,
+    checked: bool,
 }
 
 export enum SortMode {

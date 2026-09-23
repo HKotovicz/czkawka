@@ -8,6 +8,7 @@ export component PopupSelectResults inherits Rectangle {
     callback show_popup();
     callback close_popup();
     callback open_custom_select_popup();
+    callback open_file_type_select_popup();
     property <[SelectModel]> model: GuiState.select_results_list;
     property <length> item_height: 30px;
     out property <length> all_items_height: item_height * model.length;
@@ -40,6 +41,8 @@ export component PopupSelectResults inherits Rectangle {
                     clicked => {
                         if (i.data == SelectMode.SelectCustom) {
                             root.open_custom_select_popup();
+                        } else if (i.data == SelectMode.SelectByFileType) {
+                            root.open_file_type_select_popup();
                         } else {
                             Callabler.select_items(i.data);
                         }

@@ -74,6 +74,10 @@ pub(crate) fn set_number_of_enabled_items(app: &MainWindow, active_tab: ActiveTa
             app.global::<GuiState>().set_selected_results_video_optimizer(it1);
             app.global::<GuiState>().set_selected_results_video_optimizer2(it2);
         }
+        ActiveTab::ImageOptimizer => {
+            app.global::<GuiState>().set_selected_results_image_optimizer(it1);
+            app.global::<GuiState>().set_selected_results_image_optimizer2(it2);
+        }
         _ => unreachable!("Current tab is not a tool that has enabled items"),
     }
 }
@@ -143,6 +147,10 @@ pub(crate) fn get_number_of_enabled_items(app: &MainWindow, active_tab: ActiveTa
         ActiveTab::VideoOptimizer => (
             app.global::<GuiState>().get_selected_results_video_optimizer(),
             app.global::<GuiState>().get_selected_results_video_optimizer2(),
+        ),
+        ActiveTab::ImageOptimizer => (
+            app.global::<GuiState>().get_selected_results_image_optimizer(),
+            app.global::<GuiState>().get_selected_results_image_optimizer2(),
         ),
         _ => unreachable!("Current tab is not a tool that has enabled items"),
     };

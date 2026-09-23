@@ -212,6 +212,7 @@ pub(super) fn build_custom_select_columns(active_tab: ActiveTab) -> Vec<CustomSe
             col_int_pair!(format!("{} [KB]", size), IntDataVideoOptimizer::SizePart1),
             col_date!(&mod_date, IntDataVideoOptimizer::ModificationDatePart1),
         ],
+        ActiveTab::ImageOptimizer => vec![],
         ActiveTab::Settings | ActiveTab::About => Vec::new(),
     }
 }

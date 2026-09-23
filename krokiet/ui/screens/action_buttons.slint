@@ -41,6 +41,7 @@ export component ActionButtons inherits HorizontalLayout {
     in-out property <[SingleMainListModel]> bad_names_model: [];
     in-out property <[SingleMainListModel]> exif_remover_model: [];
     in-out property <[SingleMainListModel]> video_optimizer_model: [];
+    in-out property <[SingleMainListModel]> image_optimizer_model: [];
 
     property <ActiveTab> active_tab: GuiState.active_tab;
 
@@ -65,7 +66,8 @@ export component ActionButtons inherits HorizontalLayout {
         (active_tab == ActiveTab.BadExtensions && (GuiState.selected_results_bad_extensions > 0 || GuiState.selected_results_bad_extensions2 > 0)) ||
         (active_tab == ActiveTab.BadNames && (GuiState.selected_results_bad_names > 0 || GuiState.selected_results_bad_names2 > 0)) ||
         (active_tab == ActiveTab.ExifRemover && (GuiState.selected_results_exif_remover > 0 || GuiState.selected_results_exif_remover2 > 0)) ||
-        (active_tab == ActiveTab.VideoOptimizer && (GuiState.selected_results_video_optimizer > 0 || GuiState.selected_results_video_optimizer2 > 0))
+        (active_tab == ActiveTab.VideoOptimizer && (GuiState.selected_results_video_optimizer > 0 || GuiState.selected_results_video_optimizer2 > 0)) ||
+        (active_tab == ActiveTab.ImageOptimizer && (GuiState.selected_results_image_optimizer > 0 || GuiState.selected_results_image_optimizer2 > 0))
     );
     in-out property <bool> results_available: (
         (active_tab == ActiveTab.DuplicateFiles && duplicate_files_model.length > 0) ||
@@ -81,7 +83,8 @@ export component ActionButtons inherits HorizontalLayout {
         (active_tab == ActiveTab.BadExtensions && bad_extensions_model.length > 0) ||
         (active_tab == ActiveTab.BadNames && bad_names_model.length > 0) ||
         (active_tab == ActiveTab.ExifRemover && exif_remover_model.length > 0) ||
-        (active_tab == ActiveTab.VideoOptimizer && video_optimizer_model.length > 0)
+        (active_tab == ActiveTab.VideoOptimizer && video_optimizer_model.length > 0) ||
+        (active_tab == ActiveTab.ImageOptimizer && image_optimizer_model.length > 0)
     );
 
     height: 30px;
@@ -217,6 +220,17 @@ export component ActionButtons inherits HorizontalLayout {
         colorize-icon: true;
         clicked => {
             show_action_popup(PopupRequest.OptimizeVideo);
+        }
+    }
+
+    if lists_enabled && GuiState.active_tab == ActiveTab.ImageOptimizer: optimize_image_button := Button {
+        height: parent.height;
+        enabled: base_buttons_may_be_available && self.visible && checked_anything;
+        text: self.visible && Settings.show_only_icons ? "" : Translations.optimize_button_text;
+        icon: @image-url("../../icons/krokiet_optimize.svg");
+        colorize-icon: true;
+        clicked => {
+            show_action_popup(PopupRequest.OptimizeImage);
         }
     }
 
