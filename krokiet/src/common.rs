@@ -668,7 +668,9 @@ impl ActiveTab {
             | Self::BadExtensions
             | Self::BadNames
             | Self::ExifRemover
-            | Self::VideoOptimizer => false,            Self::ImageOptimizer => false,            Self::SimilarImages | Self::DuplicateFiles | Self::SimilarVideos | Self::SimilarMusic => true,
+            | Self::VideoOptimizer => false,
+            Self::ImageOptimizer => false,
+            Self::SimilarImages | Self::DuplicateFiles | Self::SimilarVideos | Self::SimilarMusic => true,
             Self::Settings | Self::About => panic!("Button should be disabled"),
         }
     }

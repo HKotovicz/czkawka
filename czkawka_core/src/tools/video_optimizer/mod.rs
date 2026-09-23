@@ -1,4 +1,4 @@
-﻿pub mod core;
+pub mod core;
 mod encoding;
 #[cfg(test)]
 mod tests;

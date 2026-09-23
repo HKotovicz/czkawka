@@ -7,6 +7,7 @@ use crossbeam_channel::Sender;
 use czkawka_core::common::progress_data::ProgressData;
 use czkawka_core::tools::image_optimizer::{ImageOptimizerParams, ImageTargetFormat};
 use slint::{ComponentHandle, Weak};
+
 use crate::model_operations::model_processor::{MessageType, ModelProcessor, ProcessFunction};
 use crate::simpler_model::{SimplerSingleMainListModel, ToSimplerVec};
 use crate::{Callabler, GuiState, MainWindow, Settings};
@@ -35,15 +36,7 @@ pub(crate) fn connect_optimize_image(app: &MainWindow, progress_sender: Sender<P
 
         let processor = ModelProcessor::new(active_tab);
 
-        processor.optimize_selected_images(
-            progress_sender,
-            weak_app,
-            stop_flag,
-            target_format,
-            quality,
-            overwrite_files,
-            preserve_metadata,
-        );
+        processor.optimize_selected_images(progress_sender, weak_app, stop_flag, target_format, quality, overwrite_files, preserve_metadata);
     });
 }
 
@@ -70,15 +63,9 @@ impl ModelProcessor {
                 let full_path = format!("{}{MAIN_SEPARATOR}{}", data.val_str[path_idx], data.val_str[name_idx]);
                 let original_size = data.get_size(size_idx);
 
-                let params = ImageOptimizerParams::new(target_format, quality, overwrite_files)
-                    .with_metadata_preservation(preserve_metadata);
+                let params = ImageOptimizerParams::new(target_format, quality, overwrite_files).with_metadata_preservation(preserve_metadata);
 
-                czkawka_core::tools::image_optimizer::core::optimize_single_image(
-                    &std::path::PathBuf::from(&full_path),
-                    original_size,
-                    &params,
-                )
-                .map_err(|e| format!("{e}"))
+                czkawka_core::tools::image_optimizer::core::optimize_single_image(&std::path::PathBuf::from(&full_path), original_size, &params).map_err(|e| format!("{e}"))
             };
 
             self.process_and_update_gui_state(

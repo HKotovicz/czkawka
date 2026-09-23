@@ -14,8 +14,8 @@ use crate::settings::model::{SavedCustomSelectColumnState, SavedCustomSelectTabS
 use crate::settings::{get_custom_select_state_file, load_data_from_file, save_data_to_file};
 use crate::shared_models::SharedModels;
 use crate::{
-    ActiveTab, Callabler, CustomSelectColumnModel, FileTypeSelectModel, GuiState, MainWindow, SelectItemsCustomColumnsRequest, SelectMode, SelectModel, Settings, SingleMainListModel,
-    UpdateCustomSelectColumnRequest,
+    ActiveTab, Callabler, CustomSelectColumnModel, FileTypeSelectModel, GuiState, MainWindow, SelectItemsCustomColumnsRequest, SelectMode, SelectModel, Settings,
+    SingleMainListModel, UpdateCustomSelectColumnRequest,
 };
 
 type SelectionResult = (u64, u64, ModelRc<SingleMainListModel>);
@@ -234,7 +234,13 @@ enum Property {
 pub(crate) fn set_select_buttons(app: &MainWindow) {
     let active_tab = app.global::<GuiState>().get_active_tab();
     let settings = app.global::<Settings>();
-    let mut base_buttons = vec![SelectMode::SelectCustom, SelectMode::SelectByFileType, SelectMode::SelectAll, SelectMode::UnselectAll, SelectMode::InvertSelection];
+    let mut base_buttons = vec![
+        SelectMode::SelectCustom,
+        SelectMode::SelectByFileType,
+        SelectMode::SelectAll,
+        SelectMode::UnselectAll,
+        SelectMode::InvertSelection,
+    ];
 
     let additional_buttons = match active_tab {
         ActiveTab::DuplicateFiles | ActiveTab::SimilarVideos | ActiveTab::SimilarMusic => vec![
@@ -530,13 +536,7 @@ fn extract_extension_from_name(item: &SingleMainListModel) -> String {
 
 /// Selects or unselects items matching the checked file types.
 /// When `file_type_idx` is Some, uses that column directly; otherwise extracts extension from Name.
-fn select_by_file_type(
-    model: &ModelRc<SingleMainListModel>,
-    active_tab: ActiveTab,
-    file_type_idx: Option<usize>,
-    checked_types: &[String],
-    select_mode: bool,
-) -> SelectionResult {
+fn select_by_file_type(model: &ModelRc<SingleMainListModel>, active_tab: ActiveTab, file_type_idx: Option<usize>, checked_types: &[String], select_mode: bool) -> SelectionResult {
     let mut checked_items = 0u64;
     let mut unchecked_items = 0u64;
     let mut old_data = model.iter().collect::<Vec<_>>();

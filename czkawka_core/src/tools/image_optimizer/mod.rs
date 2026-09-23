@@ -65,7 +65,12 @@ pub struct ImageOptimizerParams {
 impl ImageOptimizerParams {
     pub fn new(target_format: ImageTargetFormat, quality: u8, overwrite_original: bool) -> Self {
         let quality = quality.clamp(1, 100);
-        Self { target_format, quality, overwrite_original, preserve_metadata: false }
+        Self {
+            target_format,
+            quality,
+            overwrite_original,
+            preserve_metadata: false,
+        }
     }
 
     pub fn with_metadata_preservation(mut self, preserve: bool) -> Self {

@@ -10,12 +10,12 @@ use czkawka_core::tools::duplicate::DuplicateFinder;
 use czkawka_core::tools::empty_files::EmptyFiles;
 use czkawka_core::tools::empty_folder::EmptyFolder;
 use czkawka_core::tools::exif_remover::ExifRemover;
+use czkawka_core::tools::image_optimizer::ImageOptimizer;
 use czkawka_core::tools::invalid_symlinks::InvalidSymlinks;
 use czkawka_core::tools::same_music::SameMusic;
 use czkawka_core::tools::similar_images::SimilarImages;
 use czkawka_core::tools::similar_videos::SimilarVideos;
 use czkawka_core::tools::temporary::Temporary;
-use czkawka_core::tools::image_optimizer::ImageOptimizer;
 use czkawka_core::tools::video_optimizer::VideoOptimizer;
 
 use crate::ActiveTab;

@@ -123,7 +123,7 @@ fn check_image(mut entry: ImageOptimizerEntry) -> ImageOptimizerEntry {
         return entry;
     };
 
-    entry.format = format!( "{format:?}").to_lowercase();
+    entry.format = format!("{format:?}").to_lowercase();
 
     match reader.decode() {
         Ok(img) => {
@@ -139,8 +139,7 @@ fn check_image(mut entry: ImageOptimizerEntry) -> ImageOptimizerEntry {
 }
 
 pub fn optimize_single_image(input_path: &Path, _original_size: u64, params: &ImageOptimizerParams) -> Result<(), String> {
-    let img = image::open(input_path)
-        .map_err(|e| flc!("core_failed_to_open_image", file = input_path.to_string_lossy(), reason = e.to_string()))?;
+    let img = image::open(input_path).map_err(|e| flc!("core_failed_to_open_image", file = input_path.to_string_lossy(), reason = e.to_string()))?;
 
     let ext = if params.target_format == ImageTargetFormat::Same {
         input_path.extension().and_then(|e| e.to_str()).unwrap_or("jpg").to_string()
@@ -150,13 +149,11 @@ pub fn optimize_single_image(input_path: &Path, _original_size: u64, params: &Im
     let output_path = input_path.with_extension(format!("czkawka_optimized.{ext}"));
 
     let output_format = match params.target_format {
-        ImageTargetFormat::Same => {
-            match input_path.extension().and_then(|e| e.to_str()).unwrap_or("jpg").to_lowercase().as_str() {
-                "png" | "apng" => ImageFormat::Png,
-                "webp" => ImageFormat::WebP,
-                _ => ImageFormat::Jpeg,
-            }
-        }
+        ImageTargetFormat::Same => match input_path.extension().and_then(|e| e.to_str()).unwrap_or("jpg").to_lowercase().as_str() {
+            "png" | "apng" => ImageFormat::Png,
+            "webp" => ImageFormat::WebP,
+            _ => ImageFormat::Jpeg,
+        },
         ImageTargetFormat::Jpeg => ImageFormat::Jpeg,
         ImageTargetFormat::Png => ImageFormat::Png,
         ImageTargetFormat::Webp => ImageFormat::WebP,
@@ -164,8 +161,7 @@ pub fn optimize_single_image(input_path: &Path, _original_size: u64, params: &Im
 
     // JPEG/WebP get explicit quality control; PNG uses save_with_format.
     if output_format == ImageFormat::Jpeg {
-        let mut out_file = std::fs::File::create(&output_path)
-            .map_err(|e| flc!("core_failed_to_create_output", file = format!("{:?}", output_path), reason = e.to_string()))?;
+        let mut out_file = std::fs::File::create(&output_path).map_err(|e| flc!("core_failed_to_create_output", file = format!("{:?}", output_path), reason = e.to_string()))?;
         let mut encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out_file, params.quality);
         encoder
             .encode(img.as_bytes(), img.width(), img.height(), img.color().into())
@@ -175,8 +171,7 @@ pub fn optimize_single_image(input_path: &Path, _original_size: u64, params: &Im
         let rgba = img.to_rgba8();
         let encoder = webp::Encoder::from_rgba(&rgba, rgba.width(), rgba.height());
         let encoded = encoder.encode(params.quality as f32);
-        std::fs::write(&output_path, &*encoded)
-            .map_err(|e| flc!("core_failed_to_encode_image", file = format!("{:?}", output_path), reason = e.to_string()))?;
+        std::fs::write(&output_path, &*encoded).map_err(|e| flc!("core_failed_to_encode_image", file = format!("{:?}", output_path), reason = e.to_string()))?;
     } else {
         img.save_with_format(&output_path, output_format)
             .map_err(|e| flc!("core_failed_to_encode_image", file = format!("{:?}", output_path), reason = e.to_string()))?;
@@ -192,11 +187,9 @@ pub fn optimize_single_image(input_path: &Path, _original_size: u64, params: &Im
             }
             let final_path = input_path.with_extension(&ext);
             std::fs::remove_file(input_path).ok();
-            std::fs::rename(&output_path, &final_path)
-                .map_err(|e| flc!("core_failed_to_replace_original", file = final_path.to_string_lossy(), reason = e.to_string()))?;
+            std::fs::rename(&output_path, &final_path).map_err(|e| flc!("core_failed_to_replace_original", file = final_path.to_string_lossy(), reason = e.to_string()))?;
         } else {
-            std::fs::rename(&output_path, input_path)
-                .map_err(|e| flc!("core_failed_to_replace_original", file = input_path.to_string_lossy(), reason = e.to_string()))?;
+            std::fs::rename(&output_path, input_path).map_err(|e| flc!("core_failed_to_replace_original", file = input_path.to_string_lossy(), reason = e.to_string()))?;
             if params.preserve_metadata {
                 copy_exif_metadata(input_path, input_path);
             }
