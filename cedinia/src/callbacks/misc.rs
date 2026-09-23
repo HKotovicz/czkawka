@@ -348,7 +348,7 @@ pub(crate) fn wire_language_change(window: &MainWindow) {
     window.global::<AppState>().on_apply_language_change(move || {
         let win = weak.upgrade().expect("MainWindow dropped in on_apply_language_change");
         let idx = win.global::<GeneralSettings>().get_language_idx() as usize;
-        let lang = crate::localizer_cedinia::LANGUAGE_LIST.get(idx).map_or("en", |&(code, _)| code);
+        let lang = czkawka_core::localizer_core::LANGUAGE_LIST.get(idx).map_or("en", |l| l.short_name);
         crate::localizer_cedinia::apply_language_preference(lang);
         crate::translations::translate_items(&win);
     });
@@ -402,5 +402,8 @@ pub(crate) fn wire_save_settings_now(
         let settings = collect_settings_from_gui(&win);
         save_settings(&settings);
         crate::settings::save_dirs(&included_dirs.borrow(), &excluded_dirs.borrow(), &referenced_dirs.borrow());
+
+        #[cfg(target_os = "android")]
+        crate::file_picker_android::apply_theme_to_system_bars(settings.use_dark_theme);
     });
 }

@@ -106,6 +106,7 @@ impl ScanResultHandler for GuiHandler {
                     let pd = ProgressData {
                         step_name: SharedString::from(p.step_name),
                         all_progress: p.all_progress,
+                        current_progress: p.current_progress,
                         is_indeterminate: p.is_indeterminate,
                     };
                     win.global::<AppState>().set_progress(pd);
@@ -190,6 +191,10 @@ fn run_app_inner(
     let loaded_settings = load_settings();
     crate::localizer_cedinia::apply_language_preference(&loaded_settings.language);
     apply_settings_to_gui(&window, &loaded_settings);
+
+    #[cfg(target_os = "android")]
+    crate::file_picker_android::apply_theme_to_system_bars(loaded_settings.use_dark_theme);
+
     translate_items(&window);
     set_initial_gui_infos(&window);
     window.global::<AppState>().set_status_message(SharedString::from(crate::flc!("status_ready")));
@@ -341,6 +346,7 @@ pub(crate) fn setup_logger_cache() {
     }
 
     register_image_decoding_hooks();
+    czkawka_core::common::build_runtime_info::BuildRuntimeInfo::get();
     let config_cache_path_set_result = set_config_cache_path("cedinia", "cedinia");
 
     #[cfg(not(target_os = "android"))]
@@ -366,8 +372,6 @@ impl log::Log for DualLogger {
     }
 
     fn log(&self, record: &log::Record) {
-        // logcat gets everything (AndroidLogger applies its own level); the file is filtered
-        // to match the desktop logger so the exported log stays on-topic.
         self.android.log(record);
 
         if !self.enabled(record.metadata()) || !filtering_messages(record) {

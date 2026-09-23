@@ -1,7 +1,6 @@
 # Cedinia - English (fallback)
 
 # App / top bar titles
-app_name = Cedinia
 tool_duplicate_files = Дублює
 tool_empty_folders = Порожні теки
 tool_similar_images = Схожі зображення
@@ -13,6 +12,7 @@ tool_bad_extensions = Помилкові розширення
 tool_same_music = Музичні дублікати
 tool_bad_names = Помилкові імена
 tool_exif_remover = Дані EXIF
+tool_similar_videos = Подібні відео (аудіо)
 tool_directories = Каталоги
 tool_settings = Налаштування
 # Home screen tool card descriptions
@@ -27,6 +27,7 @@ home_bad_extensions_description = Файли з неправильним роз�
 home_same_music_description = Схожі аудіо файли за тегами
 home_bad_names_description = Файли з логічними символами в імені
 home_exif_description = Зображення з EXIF метаданими
+home_similar_videos_description = Знайти відео з подібним аудіо
 # Results list
 scanning = Виконується сканування...
 stopping = Зупинення...
@@ -35,7 +36,7 @@ press_start = Натисніть СТАРТ для сканування
 select_label = Від.
 deselect_label = Desel.
 list_label = Список
-gallery_label = Галь.
+gallery_label = Гал
 # Selection popup
 selection_popup_title = Вибрати
 select_all = Виділити все
@@ -113,6 +114,7 @@ settings_hash_size = Розмір хешу
 settings_hash_size_desc = Великі розміри мають менше помилкових додатніх, але також менш схожі зображення
 settings_hash_alg = Алгоритм хеша
 settings_image_filter = Змінити розмір фільтру
+settings_geometric_invariance = Геометрична інваріантність
 settings_ignore_same_size = Ігнорувати зображення з такими ж розмірами
 settings_gallery_image_fit_cover = Галерея: обрізати в квадрат
 settings_gallery_image_fit_cover_desc = Заповніть плитку; вимкнути щоб зберегти оригінальне співвідношення сторін
@@ -129,6 +131,10 @@ settings_music_length = Довжина
 settings_music_genre = Жанр
 settings_music_bitrate = Бітрейт
 settings_music_approx = Приблизне порівняння тегів
+settings_temporary_files_header = ТЕМПОРНІ ФАЙЛИ
+settings_temporary_files_extensions_label = РОЗШИРЕНІВ
+settings_temporary_files_extensions_placeholder = наприклад, .tmp, .bak, ~
+settings_temporary_files_reset = Скинути до типових
 settings_broken_files_header = АКТИВНІ ФАЙЛИ
 settings_broken_files_note = Відстеження ресурсів. Для кращої продуктивності використовуйте Krokiet на робочому столі.
 settings_broken_files_types_label = РЕЄСТРАЦІЯ
@@ -136,6 +142,11 @@ settings_broken_audio = Аудіо
 settings_broken_pdf = Файл pdf
 settings_broken_archive = Архів
 settings_broken_image = Зображення
+settings_broken_font = Шрифт
+settings_broken_markup = Форматування (JSON/XML/TOML)
+settings_similar_videos_header = ПОДІБНІ ВІДЕО (АУДІО)
+settings_similar_videos_audio_preset = Налаштування звукової подібності
+settings_similar_videos_audio_preset_desc = Визначає, як суворо повинні збігатися аудіо
 settings_bad_names_header = НАЗВА БАД
 settings_bad_names_checks_label = ПЕРЕВІРИТИ
 settings_bad_names_uppercase_ext = Верхнє розширення
@@ -143,6 +154,11 @@ settings_bad_names_emoji = Назва емодзі
 settings_bad_names_space = Пробіли на початку/кінці
 settings_bad_names_non_ascii = Не-ASCII символи
 settings_bad_names_duplicated = Символи, що повторюються
+settings_ignore_same_resolution = Ігнорувати зображення з тією ж роздільною здатністю
+# Settings - Appearance section
+settings_appearance_label = ЗОВНІШНІЙ ВИГЛЯД
+settings_dark_theme = Темна тема
+settings_dark_theme_desc = Використовувати темну колірну схему
 # Settings - Diagnostics tab
 diagnostics_header = ДІАГНОСТИКА
 diagnostics_thumbnails = Кеш мініатюр
@@ -152,6 +168,11 @@ diagnostics_clear_thumbnails = Очистити мініатюри
 diagnostics_open_thumbnails_folder = Відкрити папку
 diagnostics_clear_cache = Очистити кеш
 diagnostics_open_cache_folder = Відкрити папку
+diagnostics_export_logs = Експортувати журнали
+logs_label = Журнали
+logs_export_title = Експортувати журнали
+logs_export_saved = Журнали скопійовані до:
+logs_export_failed = Не вдалося експортувати журнали
 diagnostics_collect_test = Тестування доступу до файлу
 diagnostics_collect_test_desc = Перевірте кількість доступних файлів
 diagnostics_collect_test_run = Ран
@@ -204,6 +225,8 @@ renamed_errors_suffix = помилки
 cleaned_exif_prefix = Очищено EXIF від
 cleaned_exif_suffix = файлів
 cleaned_exif_errors_suffix = помилки
+rename_error_read_file_name = Не вдалося прочитати ім'я файлу
+rename_error_read_directory = Неможливо прочитати теку
 and_more_prefix = ... і
 and_more_suffix = більше
 # Gallery / delete popups
@@ -212,7 +235,6 @@ gallery_back = Відмінити
 gallery_confirm_delete = Так, видалити
 deleting_files = Видалення файлів...
 stop = Зупинити
-files_suffix = файлів
 scanning_fallback = Сканування...
 app_subtitle = Пошанування битви в Сединії (972 р.)
 app_license = Інтерфейс для Czkawka Core - GPL-3.0
@@ -228,38 +250,11 @@ gallery_confirm_delete_warning = Всі елементи обрані в { $unsa
 # Settings - SameMusic fingerprint warning
 same_music_fingerprint_warning = Обчислення та порівняння аудіо-відбитків є дуже ресурсоємними і може зайняти тривалий час. Рекомендується використовувати Krokiet на настільному комп'ютері для цього завдання.
 # Scan stage labels (shown during scan progress)
-stage_collecting_files = Збирання файлів
-stage_scanning_name = Сканування по імені
-stage_scanning_size_name = Сканування по імені та розміру
-stage_scanning_size = Сканування за розміром
-stage_pre_hash = Попереднє хешування
-stage_full_hash = Хеш
-stage_loading_cache = Завантаження кешу
-stage_saving_cache = Збереження кешу
-stage_calculating_image_hashes = Обчислення хешів зображення
-stage_comparing_images = Порівняння зображень
-stage_calculating_video_hashes = Обчислення хешів відео
-stage_checking_files = Перевірка файлів
-stage_checking_extensions = Перевірка розширень
-stage_checking_names = Перевірка імен
-stage_reading_music_tags = Читання музичних тегів
-stage_comparing_tags = Порівняння міток
-stage_calculating_music_fingerprints = Обчислення відбитків музики
-stage_comparing_fingerprints = Порівняння відбитків
-stage_extracting_exif = Читання EXIF тегів
-stage_creating_video_thumbnails = Створення мініатюр відео
-stage_processing_videos = Обробка відео
-stage_deleting = Видалення файлів
-stage_renaming = Перейменування файлів
-stage_moving = Переміщення файлів
-stage_hardlinking = Створення жорстких посилань
-stage_symlinking = Створення символічних посилань
-stage_optimizing_videos = Оптимізація відео
-stage_cleaning_exif = Очищення EXIF
 # Group headers in scan results
 duplicates_group_header = { $count } файлів x { $per_file } / файл = { $total } всього
 similar_images_group_header = { $count } схожих зображень
 same_music_group_header = { $count } схожих маршрутів
+similar_videos_group_header = { $count } схожих відео
 # Rename confirmation
 confirm_rename_items = Ви впевнені, що хочете перейменувати { $n } вибраних файлів?
 # Combo-box option labels (translatable display names)
@@ -270,7 +265,7 @@ option_similarity_high = Високий
 option_similarity_medium = Медіум
 option_similarity_low = Низька
 option_similarity_very_low = В.Низька
-option_similarity_minimal = Мін.
+option_similarity_minimal = Мін
 option_check_method_hash = Хеш
 option_check_method_name = Ім'я
 option_check_method_size_and_name = Розмір+Ім'я
@@ -278,15 +273,10 @@ option_check_method_size = Розмір
 option_music_method_tags = Мітки
 option_music_method_audio = Аудіо
 option_min_size_none = Без ефекту
-option_min_size_1kb = 1 КБ
-option_min_size_8kb = 8 Кб
-option_min_size_64kb = 64 КБ
-option_min_size_1mb = 1 Мб
-option_max_size_16kb = 16 Кб
-option_max_size_1mb = 1 Мб
-option_max_size_10mb = 10 Мб
-option_max_size_100mb = 100 МБ
 option_max_size_unlimited = Необмежено
+option_audio_preset_identical = Ідентичні
+option_audio_preset_clip = Довший кліп
+option_audio_preset_similar = Схожі
 # Volume labels (shown in the directories screen)
 volume_internal_storage = Внутрішня пам’ять
 volume_sd_card = Карта пам'яті (SD карта)
@@ -315,3 +305,14 @@ path_edit_no_newlines = Шляхи не можуть містити нових �
 ctx_menu_title = Відкриті
 ctx_open_file = Відкрити елемент
 ctx_open_folder = Відкрити батьківську теку
+dir_open_folder = Відкрити папку
+# Compare view
+compare_label = Порівняти
+compare_loading = Завантаження зображень...
+compare_cancelling = Скасування...
+compare_computing = Обчислення відмінностей...
+compare_mode_normal = Сторона
+compare_mode_split = Спліт
+compare_mode_overlay = Накладення
+compare_mode_diff = Різниця
+compare_res_mismatch = Різні роздільності - відмінність може бути неточною

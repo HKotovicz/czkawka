@@ -1,8 +1,7 @@
 # Cedinia - English (fallback)
 
 # App / top bar titles
-app_name = سدینیا
-tool_duplicate_files = 副本
+tool_duplicate_files = فایل‌های تکراری
 tool_empty_folders = _folders تهی завدهندی
 tool_similar_images = تصویرهای مشابه
 tool_empty_files = فایل‌های خالی
@@ -13,6 +12,7 @@ tool_bad_extensions = مدیریت‌های بد
 tool_same_music = دупلیکات مузیک
 tool_bad_names = نام‌های بد
 tool_exif_remover = داده‌های EXIF
+tool_similar_videos = ویدیوهای مشابه (صوتی)
 tool_directories = دایرکتوری‌ها
 tool_settings = تنظیمات
 # Home screen tool card descriptions
@@ -27,6 +27,7 @@ home_bad_extensions_description = فایل‌هایی با پسوند نامعت
 home_same_music_description = فایل‌های صوتی مشابه، بر اساس برچسب‌ها
 home_bad_names_description = فایل‌هایی که نام آن‌ها شامل کاراکترهای مشکل‌ساز است
 home_exif_description = تصاویر دارای اطلاعات EXIF
+home_similar_videos_description = ویدیوهایی با صدای مشابه را پیدا کنید
 # Results list
 scanning = اسکن در حال انجام است...
 stopping = در حال توقف...
@@ -35,7 +36,7 @@ press_start = برای شروع اسکن، دکمه "شروع" را فشار د�
 select_label = انتخاب کنید.
 deselect_label = دیزل.
 list_label = لیست
-gallery_label = گال.
+gallery_label = گال
 # Selection popup
 selection_popup_title = انتخاب کنید
 select_all = انتخاب همه
@@ -63,9 +64,9 @@ delete_errors_title = امکان حذف برخی از فایل‌ها وجود �
 ok = بله
 # Stopping overlay
 stopping_overlay_title = توقف
-stopping_overlay_body = 
-        پایان یافتن اسکن فعلی...
-        لطفاً منتظر بمانید.
+stopping_overlay_body =
+    پایان یافتن اسکن فعلی...
+    لطفاً منتظر بمانید.
 # Permission popup
 permission_title = دسترسی به فایل‌ها
 permission_body = برای اسکن فایل‌ها، برنامه به دسترسی به حافظه دستگاه نیاز دارد. بدون این مجوز، امکان اسکن وجود نخواهد داشت.
@@ -113,6 +114,7 @@ settings_hash_size = سایز هاش
 settings_hash_size_desc = اندازه‌های بزرگتر، احتمال نتایج مثبت کاذب کمتری دارند، اما تصاویر مشابه کمتری را نیز پیدا می‌کنند
 settings_hash_alg = الگوریتم هش
 settings_image_filter = تغییر اندازه فیلتر
+settings_geometric_invariance = ناوردایی هندسی
 settings_ignore_same_size = تصاویر دارای ابعاد یکسان را نادیده بگیرید
 settings_gallery_image_fit_cover = گالری: برش برای ایجاد تصویر مربعی
 settings_gallery_image_fit_cover_desc = فضای موجود را پر کنید؛ غیرفعال کردن این گزینه، نسبت ابعاد اصلی را حفظ می‌کند
@@ -129,6 +131,10 @@ settings_music_length = طول
 settings_music_genre = جنسیت
 settings_music_bitrate = بیتریت Axe (This appears to be a placeholder or typo in the original text)
 settings_music_approx = مقایسه تقریبی برچسب‌ها
+settings_temporary_files_header = فایل‌های موقت
+settings_temporary_files_extensions_label = اضافات
+settings_temporary_files_extensions_placeholder = به عنوان مثال: .tmp، .bak، ~
+settings_temporary_files_reset = به تنظیمات پیش‌فرض بازگردانید
 settings_broken_files_header = فایل‌های خراب شده
 settings_broken_files_note = اسکن نیازمند منابع محاسباتی زیادی است. برای بهترین عملکرد، از Krokiet در حالت دسکتاپ استفاده کنید.
 settings_broken_files_types_label = انواع بررسی شده
@@ -136,6 +142,11 @@ settings_broken_audio = آهنگ
 settings_broken_pdf = PDF
 settings_broken_archive = ارشیو
 settings_broken_image = عکس
+settings_broken_font = فونت
+settings_broken_markup = نحوه‌نویسی (JSON/XML/TOML)
+settings_similar_videos_header = ویدیوهای مشابه (صوتی)
+settings_similar_videos_audio_preset = تنظیم از پیش تعیین شده برای شباهت صدا
+settings_similar_videos_audio_preset_desc = نحوه تطابق دقیق صدا را تعیین می‌کند
 settings_bad_names_header = نام‌های نامناسب
 settings_bad_names_checks_label = چک‌ها
 settings_bad_names_uppercase_ext = افزایش حروف بزرگ
@@ -143,6 +154,11 @@ settings_bad_names_emoji = ایموجی در نام
 settings_bad_names_space = فاصله‌های ابتدایی/پایانی
 settings_bad_names_non_ascii = کاراکترهای غیر-ASCII
 settings_bad_names_duplicated = تکرار کاراکترها
+settings_ignore_same_resolution = تصاویری که دارای همان وضوح هستند را نادیده بگیرید
+# Settings - Appearance section
+settings_appearance_label = ظاهر
+settings_dark_theme = نیکت سیاه
+settings_dark_theme_desc = از طرح رنگی تیره استفاده کنید
 # Settings - Diagnostics tab
 diagnostics_header = تشخیص بیماری‌ها
 diagnostics_thumbnails = حافظه پنهان تصاویر کوچک
@@ -152,10 +168,15 @@ diagnostics_clear_thumbnails = تصاویر کوچک واضح
 diagnostics_open_thumbnails_folder = باز کردن پوشه
 diagnostics_clear_cache = پاک کردن حافظه پنهان
 diagnostics_open_cache_folder = باز کردن پوشه
+diagnostics_export_logs = خروجی گرفتن از لاگ‌ها
+logs_label = لاگ‌ها
+logs_export_title = خروجی گرفتن از لاگ‌ها
+logs_export_saved = لاگ‌ها به آدرس زیر کپی شده‌اند:
+logs_export_failed = امکان خروجی گرفتن از لاگ‌ها وجود نداشت
 diagnostics_collect_test = آزمایش دسترسی به فایل
 diagnostics_collect_test_desc = بررسی کنید که چه تعداد فایل قابل دسترسی هستند
 diagnostics_collect_test_run = اجرا کن
-diagnostics_collect_test_stop = ストップ
+diagnostics_collect_test_stop = توقف
 collect_test_cancelled = توسط کاربر متوقف شد
 diag_confirm_clear_thumbnails = آیا می‌خواهید تمام تصاویر پیش‌نمایش ذخیره شده را پاک کنید؟
 diag_confirm_clear_cache = آیا می خواهید حافظه پنهان تمام برنامه ها را پاک کنید؟
@@ -204,6 +225,8 @@ renamed_errors_suffix = خطاها
 cleaned_exif_prefix = اطلاعات EXIF از فایل‌های زیر پاکسازی شد:
 cleaned_exif_suffix = فایل‌ها
 cleaned_exif_errors_suffix = خطاها
+rename_error_read_file_name = امکان خواندن نام فایل وجود ندارد
+rename_error_read_directory = امکان خواندن دایرکتوری وجود ندارد
 and_more_prefix = ...و
 and_more_suffix = بیشتر
 # Gallery / delete popups
@@ -211,8 +234,7 @@ gallery_delete_button = حذف
 gallery_back = بازگشت
 gallery_confirm_delete = بله، حذف کنید
 deleting_files = حذف فایل‌ها...
-stop = ストップ
-files_suffix = فایل‌ها
+stop = توقف
 scanning_fallback = سkenنگ...
 app_subtitle = به افتخار نبرد سدینیا (سال 972 میلادی)
 app_license = بخش رابط کاربری برای هسته Czkawka - مجوز GPL-3.0
@@ -228,38 +250,11 @@ gallery_confirm_delete_warning = تمام موارد در { $unsafe_groups } گ�
 # Settings - SameMusic fingerprint warning
 same_music_fingerprint_warning = محاسبه و مقایسه اثر انگشت صوتی، فرایندی بسیار پرهزینه از نظر منابع است و ممکن است زمان زیادی طول بکشد. توصیه می‌شود برای انجام این کار، از Krokiet در یک سیستم دسکتاپ استفاده کنید.
 # Scan stage labels (shown during scan progress)
-stage_collecting_files = جمع‌آوری فایل‌ها
-stage_scanning_name = جستجو بر اساس نام
-stage_scanning_size_name = جستجو بر اساس نام و اندازه
-stage_scanning_size = اسکن بر اساس اندازه
-stage_pre_hash = پیش‌هشینگ
-stage_full_hash = تبدیل هش (یا هش‌سازی)
-stage_loading_cache = فیلتر کشی را بارگذاری می‌کنیم
-stage_saving_cache = ذخیره کشی
-stage_calculating_image_hashes = محاسبه هش تصاویر
-stage_comparing_images = مقایسه تصاویر
-stage_calculating_video_hashes = محاسبه هش ویدیوها
-stage_checking_files = بررسی فایل‌ها
-stage_checking_extensions = بررسی افزونه‌ها
-stage_checking_names = بررسی نام‌ها
-stage_reading_music_tags = خواندن برچسب‌های موسیقی
-stage_comparing_tags = مقایسه تگ‌ها
-stage_calculating_music_fingerprints = محاسبه اثر انگشت موسیقی
-stage_comparing_fingerprints = مقایسه اثر انگشت‌ها
-stage_extracting_exif = خواندن برچسب‌های EXIF
-stage_creating_video_thumbnails = ساختن تصاویر کوچک (تُنبِر) برای ویدیوها
-stage_processing_videos = پردازش ویدیوها
-stage_deleting = حذف فایل‌ها
-stage_renaming = بازنامه فایل‌ها
-stage_moving = انتقال فایل‌ها
-stage_hardlinking = ایجاد لینک‌های سخت
-stage_symlinking = ایجاد لینک‌های سمبولیک
-stage_optimizing_videos = بهینه‌سازی ویدیوها
-stage_cleaning_exif = پاکسازی داده‌های EXIF
 # Group headers in scan results
 duplicates_group_header = { $count } فایل × { $per_file } واحد در هر فایل = { $total } واحد در مجموع
 similar_images_group_header = { $count } تصویر مشابه
 same_music_group_header = { $count } قطعه مشابه
+similar_videos_group_header = { $count } ویدیو مشابه دیگر
 # Rename confirmation
 confirm_rename_items = آیا مطمئن هستید که می‌خواهید نام { $n } فایل انتخاب‌شده را تغییر دهید؟
 # Combo-box option labels (translatable display names)
@@ -270,7 +265,7 @@ option_similarity_high = ارتفاع
 option_similarity_medium = میانبر
 option_similarity_low = پایین
 option_similarity_very_low = بسیار پایین
-option_similarity_minimal = من.
+option_similarity_minimal = حداقل
 option_check_method_hash = هش
 option_check_method_name = نام
 option_check_method_size_and_name = اندازه + نام
@@ -278,15 +273,10 @@ option_check_method_size = اندازه
 option_music_method_tags = برچسب‌ها
 option_music_method_audio = آهنگ
 option_min_size_none = هیچ
-option_min_size_1kb = 1 کیلوبایت
-option_min_size_8kb = 8 کیلوبایت
-option_min_size_64kb = 64 کیلوبایت
-option_min_size_1mb = 1 مگابایت
-option_max_size_16kb = 16 کیلوبایت
-option_max_size_1mb = 1 مگابایت
-option_max_size_10mb = 10 مگابایت
-option_max_size_100mb = 100 مگابایت
 option_max_size_unlimited = بی محدودیت
+option_audio_preset_identical = دقیقاً مشابه
+option_audio_preset_clip = آن قسمت را کمی بزرگتر کنید
+option_audio_preset_similar = مشابه
 # Volume labels (shown in the directories screen)
 volume_internal_storage = حافظه داخلی
 volume_sd_card = کارت حافظه (کارت SD)
@@ -315,3 +305,14 @@ path_edit_no_newlines = مسیرها نباید شامل خطوط جدید با�
 ctx_menu_title = باز
 ctx_open_file = آیتم باز
 ctx_open_folder = باز کردن پوشه والد
+dir_open_folder = باز کردن پوشه
+# Compare view
+compare_label = مقایسه
+compare_loading = در حال بارگذاری تصاویر...
+compare_cancelling = در حال لغو شدن...
+compare_computing = محاسبه تفاوت‌ها...
+compare_mode_normal = سمت
+compare_mode_split = تقسیم
+compare_mode_overlay = پوشش‌دهی
+compare_mode_diff = تفاوت
+compare_res_mismatch = رزولوشن‌های مختلف - ممکن است اختلاف (diff) نادرست باشد

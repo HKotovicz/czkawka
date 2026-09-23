@@ -24,7 +24,7 @@ fi
 case "$DISTRO" in
     debian)
         BASE="ffmpeg libgtk-4-dev"
-        OPTIONAL="libheif-dev libraw-dev libavif-dev libdav1d-dev"
+        OPTIONAL="libheif-dev libraw-dev libavif-dev libdav1d-dev libheif-plugin-libde265 libheif-plugin-dav1d libheif-plugin-aomdec"
         INSTALL_CMD="apt install -y"
         UPDATE_CMD="apt update"
         ;;

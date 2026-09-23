@@ -1,9 +1,11 @@
 name: 🍎 MacOS
+
 on:
   push:
+    branches: [ master, main ]
   pull_request:
-  schedule:
-    - cron: '0 0 * * 2'
+    branches: [ master, main ]
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -32,9 +34,7 @@ jobs:
 
       - name: Install GTK4
         run: |
-          brew link --overwrite python@3.13
           brew install gtk4 libheif libavif dav1d || true
-          # brew link --overwrite python@3.13
 
       - name: Build Release
         if: ${{ github.ref == 'refs/heads/master' }}
@@ -127,7 +127,7 @@ jobs:
 
       - name: Release
         if: ${{ github.ref == 'refs/heads/master' && vars.HAVE_PAT_REPOSITORY_TOKEN == '1' }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: "Nightly"
           files: |

@@ -88,7 +88,7 @@ clip:
     cargo clippy --fix --allow-dirty --allow-staged --no-default-features --features winit_software --all-targets
 
 fix:
-    grep -rl --null -F --include='*.rs' --include='*.slint' --include='*.md' --include='*.ftl' --exclude='AGENTS.md' --exclude='justfile' --exclude-dir='.git' --exclude-dir='target' -e '─' -e '–' -e '—' . | xargs -0 -r perl -CSD -i -pe 's/[\x{2500}\x{2013}\x{2014}]/-/g' || true
+    grep -rl --null -F --include='*.rs' --include='*.slint' --include='*.md' --include='*.ftl' --exclude='AGENTS.md' --exclude='justfile' --exclude-dir='.git' --exclude-dir='target' -e '─' -e '–' -e '—' -e '…' . | xargs -0 -r perl -CSD -i -pe 's/[\x{2500}\x{2013}\x{2014}]/-/g; s/\x{2026}\.?/.../g' || true
     cp misc/pyproject.toml .
     uv sync
 
@@ -100,7 +100,7 @@ fix:
     cargo +nightly fmt
     cargo clippy --fix --allow-dirty --allow-staged --all-features --all-targets
     cargo +nightly fmt
-    cargo fmt
+    cargo fmt 2>/dev/null
 
 fixn:
     cargo +nightly fmt
@@ -129,6 +129,12 @@ unused_features:
     xdg-open czkawka_cli/report.html
     xdg-open czkawka_core/report.html
     xdg-open czkawka_gui/report.html
+
+##################### VERSION #####################
+
+# Bump version in all crates, UI files and release metadata, e.g. `just change-version 12.0.1`
+change-version version:
+    uv run misc/change_version.py {{version}}
 
 ##################### LICENSES #####################
 
@@ -206,6 +212,11 @@ android_devices:
 android: android_build android_install android_run
 
 androidr: android_build_release android_install_release android_run
+
+# Install and launch a prebuilt APK (e.g. downloaded from CI) without building.
+android_manual apk:
+    {{adb}} install -r "{{apk}}"
+    {{adb}} shell am start -n {{apk_package}}/{{apk_activity}}
 
 # Build, install and launch a debug APK with AddressSanitizer for testing the
 # JNI bridge (file_picker_android.rs) on a real arm64 device/emulator.
@@ -371,7 +382,6 @@ translate:
     uv run misc/ai_translate/translate.py czkawka_core/i18n
     uv run misc/ai_translate/translate.py krokiet/i18n
     uv run misc/ai_translate/translate.py cedinia/i18n
-    just pack_translations
 
 validate_translations *args: # Available --fix argument, which removes invalid translations
     uv run misc/ai_translate/validate_translations.py czkawka_gui/i18n {{args}}

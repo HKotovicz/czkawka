@@ -1,4 +1,38 @@
-## Version 12.0 - ??.??.????
+## Version 12.0.2 - 09.09.2026r
+
+### Core
+- Surfaced rollback rename failures in `make_hard_link`/`make_file_symlink` instead of silently ignoring them - [#1995](https://github.com/qarmin/czkawka/pull/1995)
+- Switched the XDG portal trash implementation to `async-io`, avoiding a Tokio runtime requirement alongside Slint's async-io backend - [#2025](https://github.com/qarmin/czkawka/pull/2025)
+- Fixed the AVIF license metadata - [#2060](https://github.com/qarmin/czkawka/pull/2060)
+- Fixed the AVIF tests - [#2061](https://github.com/qarmin/czkawka/pull/2061)
+
+### CLI
+- Rejected non-finite user input (e.g. `NaN`/`inf`) in numeric arguments - [#2038](https://github.com/qarmin/czkawka/pull/2038)
+- Added the ability to start a scan in Krokiet via CLI arguments - [#2069](https://github.com/qarmin/czkawka/pull/2069)
+
+### Krokiet
+- Fixed popup OK/Close button text truncation and centered popups more reasonably - [#2043](https://github.com/qarmin/czkawka/pull/2043)
+
+## Version 12.0.1 - 29.07.2026r
+
+### Core
+- Fixed an issue where console windows appeared on Windows when running FFmpeg internally - [#1989](https://github.com/qarmin/czkawka/pull/1989)
+- Added `BuildRuntimeInfo`, a new module that detects compile-time features (HEIF, LibRAW, AVIF) and the runtime availability of FFmpeg and FFprobe at startup - [#1989](https://github.com/qarmin/czkawka/pull/1989)
+
+### Krokiet
+- Added a new "About / Diagnostics" panel to inspect build/runtime features and verify whether specific image files are recognized correctly - [#1989](https://github.com/qarmin/czkawka/pull/1989)
+- Fixed the sort popup not displaying its background - [#2011](https://github.com/qarmin/czkawka/pull/2011)
+- Fixed text overflowing in popups for some languages - [#2011](https://github.com/qarmin/czkawka/pull/2011)
+- Fixed the Video Optimizer optimize confirmation popup content being cropped - [#2011](https://github.com/qarmin/czkawka/pull/2011)
+- Added translations for settings dropdown options - [#2011](https://github.com/qarmin/czkawka/pull/2011)
++ Pinned Slint to version 1.17.0 to avoid a Wayland bug introduced in 1.17.1 that prevented the window size from being restored correctly on startup - [#2011](https://github.com/qarmin/czkawka/pull/2011)
+
+### Cedinia
+- Fixed an incorrect progress bar status - [#1989](https://github.com/qarmin/czkawka/pull/1989)
+- Fixed automatic language detection on first launch - [#1989](https://github.com/qarmin/czkawka/pull/1989)
+- Migrated all raw and unsafe JNI usage (file picker, notifications, Android path setup) to the new `jni-high` crate - [#2011](https://github.com/qarmin/czkawka/pull/2011)
+
+## Version 12.0.0 - 28.06.2026r
 
 ### Czkawka GTK Deprecation Notice
 **Version 12.0 is the last released version of Czkawka GTK.** No new binaries will be provided from this point on. All users are encouraged to migrate to Krokiet, the new Slint-based GUI frontend.

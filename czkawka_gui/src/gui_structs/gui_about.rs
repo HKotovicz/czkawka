@@ -14,6 +14,7 @@ pub struct GuiAbout {
     pub button_krokiet: Button,
     pub button_instruction: Button,
     pub button_translation: Button,
+    pub button_other_apps: Button,
 }
 
 impl GuiAbout {
@@ -114,12 +115,14 @@ impl GuiAbout {
         let button_krokiet = Button::builder().label("Krokiet").build();
         let button_instruction = Button::builder().label("Instruction").build();
         let button_translation = Button::builder().label("Translation").build();
+        let button_other_apps = Button::builder().label("Other Apps").build();
 
         new_box.append(&button_repository);
         new_box.append(&button_donation);
         new_box.append(&button_krokiet);
         new_box.append(&button_instruction);
         new_box.append(&button_translation);
+        new_box.append(&button_other_apps);
 
         custom_box.append(&new_box);
 
@@ -130,6 +133,7 @@ impl GuiAbout {
             button_krokiet,
             button_instruction,
             button_translation,
+            button_other_apps,
         }
     }
 
@@ -150,5 +154,6 @@ impl GuiAbout {
         self.button_krokiet.set_label("Krokiet");
         self.button_instruction.set_label(&flg!("about_instruction_button"));
         self.button_translation.set_label(&flg!("about_translation_button"));
+        self.button_other_apps.set_label(&flg!("about_other_apps_button"));
     }
 }

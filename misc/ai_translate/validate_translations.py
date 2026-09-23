@@ -18,6 +18,17 @@ class Colors:
     BOLD = "\033[1m"
 
 
+# U+3002 is CJK full stop; U+06D4 is Urdu/Arabic full stop - both count as sentence-end
+SENTENCE_END_CHARS = {".", "。", "۔"}
+
+
+def ends_with_period(text: str) -> bool:
+    # Normalize Unicode ellipsis to '...' so '…' is treated as ending with '.'
+    normalized = text.replace("….", "...").replace("…", "...")
+    stripped = normalized.strip()
+    return any(stripped.endswith(c) for c in SENTENCE_END_CHARS)
+
+
 def extract_placeholders(text: str) -> Set[str]:
     pattern = re.compile(r"{\s*\$[\w-]+\s*}")
     matches = pattern.findall(text)
@@ -64,9 +75,9 @@ def validate_translation(base_value: str, translated_value: str, key: str) -> Li
                     f"  {Colors.RED}Wrong occurrence count for {placeholder}:{Colors.RESET} expected {base_count}, found {translated_count}"
                 )
 
-    # New: validate trailing dot presence/absence consistency
-    base_has_dot = base_value.strip().endswith(".")
-    translated_has_dot = translated_value.strip().endswith(".")
+    # Validate trailing dot presence/absence consistency
+    base_has_dot = ends_with_period(base_value)
+    translated_has_dot = ends_with_period(translated_value)
 
     if base_has_dot != translated_has_dot:
         if base_has_dot:
@@ -77,6 +88,19 @@ def validate_translation(base_value: str, translated_value: str, key: str) -> Li
             errors.append(
                 f"  {Colors.RED}Trailing dot mismatch:{Colors.RESET} source does not end with a dot but translation does"
             )
+
+    # Detect literal \n (two chars: backslash + n) inserted by AI translators.
+    # Fluent does not interpret \n as a newline; it renders as the two raw characters.
+    if r"\n" in translated_value:
+        errors.append(
+            f"  {Colors.RED}Literal \\n sequence:{Colors.RESET} translation contains '\\n' which Fluent renders as raw text, not a newline"
+        )
+
+    # Detect Unicode ellipsis character - should be '...' for consistency.
+    if "…" in translated_value:
+        errors.append(
+            f"  {Colors.YELLOW}Ellipsis character:{Colors.RESET} translation contains Unicode ellipsis U+2026, use '...' instead"
+        )
 
     return errors
 
@@ -137,6 +161,54 @@ def fix_language_file(lang_file: pathlib.Path, keys_to_remove: Set[str]) -> int:
 
     lang_file.write_text("\n".join(result_lines), encoding="utf-8")
     return removed_count
+
+
+def fix_literal_newlines_in_language_file(lang_file: pathlib.Path, keys_to_fix: Set[str]) -> int:
+    """Replace literal \\n sequences in the given keys with a space."""
+    content = lang_file.read_text(encoding="utf-8")
+    lines = content.split("\n")
+    result_lines: List[str] = []
+    i = 0
+    modified_count = 0
+
+    while i < len(lines):
+        line = lines[i]
+        key_match = re.match(r"^([\w][\w-]*)\s*=", line)
+
+        if key_match and key_match.group(1) in keys_to_fix:
+            # Collect the full block (first line + indented continuation lines)
+            block: List[str] = [line]
+            j = i + 1
+            while j < len(lines) and lines[j].startswith(" "):
+                block.append(lines[j])
+                j += 1
+
+            new_block = [bl.replace(r"\n", " ") for bl in block]
+            if new_block != block:
+                modified_count += 1
+            result_lines.extend(new_block)
+            i = j
+            continue
+
+        result_lines.append(line)
+        i += 1
+
+    if modified_count > 0:
+        lang_file.write_text("\n".join(result_lines), encoding="utf-8")
+
+    return modified_count
+
+
+def replace_ellipsis_in_file(lang_file: pathlib.Path) -> int:
+    """Replace Unicode ellipsis (… and ….) with '...' throughout the file."""
+    content = lang_file.read_text(encoding="utf-8")
+    # Handle '….' (ellipsis + dot added by earlier buggy trailing-dot fixer) first
+    new_content = content.replace("….", "...").replace("…", "...")
+    if new_content != content:
+        count = content.count("…")
+        lang_file.write_text(new_content, encoding="utf-8")
+        return count
+    return 0
 
 
 def fix_trailing_dots_in_language_file(
@@ -206,15 +278,16 @@ def fix_trailing_dots_in_language_file(
                     text = m.group(1)  # type: ignore
                     trailing_spaces = m.group(2)  # type: ignore
 
-                    base_has_dot = base_entries[key].strip().endswith(".")
-                    trans_has_dot = text.endswith(".")
+                    base_has_dot = ends_with_period(base_entries[key])
+                    trans_has_dot = ends_with_period(text)
 
                     new_text = text
                     if base_has_dot and not trans_has_dot:
+                        # only add ASCII "." when translation doesn't already end with any sentence-ending char
                         new_text = text + "."
                     elif not base_has_dot and trans_has_dot:
-                        # remove all trailing dots from the textual end
-                        new_text = re.sub(r"\.+$", "", text)
+                        # remove trailing sentence-end chars (ASCII ".", CJK "。", Arabic "۔")
+                        new_text = re.sub(r"[.。۔]+$", "", text)
 
                     if new_text != text:
                         # replace last content part while keeping other parts intact
@@ -264,6 +337,14 @@ def validate_i18n_folder(
     base_entries = parse_ftl_file(en_file)
     print(f"Found {len(base_entries)} entries in base file\n")
 
+    source_newline_keys = [k for k, v in base_entries.items() if r"\n" in v]
+    if source_newline_keys:
+        print(
+            f"{Colors.RED}ERROR: English source contains literal \\n in keys: {', '.join(source_newline_keys)}{Colors.RESET}"
+        )
+        print("Fix the English source file before running validation on translations.\n")
+        return 1
+
     lang_folders = [f for f in i18n_path.iterdir() if f.is_dir() and f.name != "en"]
     lang_folders.sort()
 
@@ -298,8 +379,36 @@ def validate_i18n_folder(
 
     if fix_mode:
         print(
-            f"\n{Colors.YELLOW}FIX MODE: Fixing trailing-dot mismatches and removing entries with placeholder errors{Colors.RESET}\n"
+            f"\n{Colors.YELLOW}FIX MODE: Replacing ellipsis, fixing trailing-dot mismatches, removing entries with placeholder errors{Colors.RESET}\n"
         )
+
+        # Pre-pass: replace all Unicode ellipsis characters across all lang files.
+        # Must run before trailing-dot checks because '…' followed by a dot-fixer
+        # would otherwise produce '….' -> '....' (4 dots).
+        total_ellipsis = 0
+        for lang_folder in lang_folders:
+            lang_file_pre = find_ftl_file_in_folder(lang_folder)
+            if lang_file_pre:
+                total_ellipsis += replace_ellipsis_in_file(lang_file_pre)
+
+        # Re-collect errors after ellipsis replacement so trailing-dot logic sees '...'
+        if total_ellipsis > 0:
+            errors_by_language = {}
+            total_errors = 0
+            for lang_folder in lang_folders:
+                lang_code_pre = lang_folder.name
+                lang_name_pre = LANGUAGE_NAMES.get(lang_code_pre, "Unknown")
+                lang_file_pre = find_ftl_file_in_folder(lang_folder)
+                if not lang_file_pre:
+                    continue
+                errs = validate_language_file(base_entries, lang_file_pre, lang_code_pre)
+                if errs:
+                    errors_by_language[lang_code_pre] = {
+                        "name": lang_name_pre,
+                        "file": lang_file_pre,
+                        "errors": errs,
+                    }
+                    total_errors += len(errs)
 
         total_removed = 0
         total_fixed = 0
@@ -310,6 +419,7 @@ def validate_i18n_folder(
             # classify keys by type of error
             keys_to_remove: Set[str] = set()
             keys_to_fix_dots: Set[str] = set()
+            keys_to_fix_newlines: Set[str] = set()
 
             for key, msgs in data["errors"].items():
                 combined = "\n".join(msgs)
@@ -319,14 +429,23 @@ def validate_i18n_folder(
                     or "Wrong occurrence count" in combined
                 ):
                     keys_to_remove.add(key)
-                elif "Trailing dot mismatch" in combined:
+                    continue
+                has_known_fix = False
+                if "Trailing dot mismatch" in combined:
                     keys_to_fix_dots.add(key)
-                else:
-                    # default to removal if unknown error
+                    has_known_fix = True
+                if "Literal \\n sequence" in combined:
+                    keys_to_fix_newlines.add(key)
+                    has_known_fix = True
+                # Ellipsis errors are already resolved by the pre-pass above
+                if "Ellipsis character" in combined:
+                    has_known_fix = True
+                if not has_known_fix:
                     keys_to_remove.add(key)
 
             removed = 0
             fixed = 0
+            fixed_newlines = 0
 
             if keys_to_remove:
                 removed = fix_language_file(lang_file, keys_to_remove)
@@ -334,14 +453,25 @@ def validate_i18n_folder(
             if keys_to_fix_dots:
                 fixed = fix_trailing_dots_in_language_file(lang_file, base_entries, keys_to_fix_dots)
 
+            if keys_to_fix_newlines:
+                fixed_newlines = fix_literal_newlines_in_language_file(lang_file, keys_to_fix_newlines)
+
             total_removed += removed
-            total_fixed += fixed
+            total_fixed += fixed + fixed_newlines
 
-            print(f"{lang_code:8} ({data['name']:25}) - removed {removed:3} entry(ies), fixed {fixed:3} entry(ies)")
+            print(
+                f"{lang_code:8} ({data['name']:25}) - removed {removed:3} entry(ies), fixed {fixed + fixed_newlines:3} entry(ies)"
+            )
 
-        print(
-            f"\n{Colors.GREEN}Fixed! Removed {total_removed} entry(ies) and updated {total_fixed} translation(s) with trailing-dot mismatches{Colors.RESET}"
-        )
+        parts = []
+        if total_ellipsis > 0:
+            parts.append(f"replaced {total_ellipsis} ellipsis character(s)")
+        if total_removed > 0:
+            parts.append(f"removed {total_removed} entry(ies) with placeholder errors")
+        if total_fixed > 0:
+            parts.append(f"updated {total_fixed} entry(ies) with trailing-dot or newline issues")
+        summary = ", ".join(parts) if parts else "nothing to fix"
+        print(f"\n{Colors.GREEN}Fixed! {summary.capitalize()}.{Colors.RESET}")
         return 0
 
     print(f"\nFound errors in {len(errors_by_language)} language(s):\n")

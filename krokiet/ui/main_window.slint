@@ -31,6 +31,7 @@ import { PopupOtherApps } from "popups/popup_other_apps.slint";
 import { ToolSettings } from "screens/tool_settings.slint";
 import { Translations } from "globals/translations.slint";
 import { ImageCompareOverlay } from "screens/image_compare.slint";
+import { ColorPalette } from "globals/color_palette.slint";
 
 export {Settings, Callabler, GuiState, Translations, Palette}
 
@@ -212,7 +213,7 @@ export component MainWindow inherits Window {
 
             Text {
                 font-size: FontSizes.normal;
-                text: "Krokiet\n11.0.1";
+                text: "Krokiet\n12.0.2";
                 vertical-alignment: center;
                 horizontal-alignment: center;
             }
@@ -237,15 +238,13 @@ export component MainWindow inherits Window {
     new_directory_popup_window := PopupNewDirectories {
         height: root.height;
         width: root.width;
-
-        x: parent.x + (root.width - self.popup_width) / 2.0;
-        y: parent.y + (parent.height - self.popup_height) / 2.0;
+        x: 0.0; y: 0.0;
     }
 
     select_popup_window := PopupSelectResults {
         property <length> x_offset: 0;
         property <length> y_offset: 0;
-        x: parent.x + x_offset - self.item_width / 2.0;
+        x: max(parent.x, parent.x + x_offset - self.item_width / 2.0);
         y: parent.y + y_offset - self.all_items_height - 5px;
         height: root.height;
         width: root.width;
@@ -257,78 +256,61 @@ export component MainWindow inherits Window {
     custom_select_popup_window := PopupCustomSelect {
         height: root.height;
         width: root.width;
-        x: parent.x + (root.width - self.popup_width) / 2.0;
-        y: parent.y + (parent.height - self.popup_height) / 2.0;
+        x: 0.0; y: 0.0;
     }
 
     delete_popup_window := PopupDelete {
         height: root.height;
         width: root.width;
-
-        x: parent.x + (root.width - self.popup_width) / 2.0;
-        y: parent.y + (parent.height - self.popup_height) / 2.0;
+        x: 0.0; y: 0.0;
     }
 
     trash_popup_window := PopupTrash {
         height: root.height;
         width: root.width;
-
-        x: parent.x + (root.width - self.popup_width) / 2.0;
-        y: parent.y + (parent.height - self.popup_height) / 2.0;
+        x: 0.0; y: 0.0;
     }
 
     move_popup_window := PopupMoveFolders {
         height: root.height;
         width: root.width;
-
-        x: parent.x + (root.width - self.popup_width) / 2.0;
-        y: parent.y + (parent.height - self.popup_height) / 2.0;
+        x: 0.0; y: 0.0;
     }
 
     rename_extension_popup_window := PopupRenameBadExtensions {
         height: root.height;
         width: root.width;
-
-        x: parent.x + (root.width - self.popup_width) / 2.0;
-        y: parent.y + (parent.height - self.popup_height) / 2.0;
+        x: 0.0; y: 0.0;
     }
 
     rename_bad_file_name_popup_window := PopupRenameBadFileNames {
         height: root.height;
         width: root.width;
-
-        x: parent.x + (root.width - self.popup_width) / 2.0;
-        y: parent.y + (parent.height - self.popup_height) / 2.0;
+        x: 0.0; y: 0.0;
     }
 
     rename_file_popup_window := PopupRenameFile {
         height: root.height;
         width: root.width;
-
-        x: parent.x + (root.width - self.popup_width) / 2.0;
-        y: parent.y + (parent.height - self.popup_height) / 2.0;
+        x: 0.0; y: 0.0;
     }
 
     error_popup_window := PopupError {
         height: root.height;
         width: root.width;
-
-        x: parent.x + (root.width - self.popup_width) / 2.0;
-        y: parent.y + (parent.height - self.popup_height) / 2.0;
+        x: 0.0; y: 0.0;
     }
 
     save_popup_window := PopupSave {
         height: root.height;
         width: root.width;
-
-        x: parent.x + (root.width - self.popup_width) / 2.0;
-        y: parent.y + (parent.height - self.popup_height) / 2.0;
+        x: 0.0; y: 0.0;
     }
 
     sort_popup_window := PopupSortResults {
         property <length> x_offset: 0;
         property <length> y_offset: 0;
-        x: parent.x + x_offset - self.item_width / 2.0;
+        x: max(parent.x, parent.x + x_offset - self.item_width / 2.0);
         y: parent.y + y_offset - self.all_items_height - 5px;
         height: root.height;
         width: root.width;
@@ -337,10 +319,8 @@ export component MainWindow inherits Window {
     clean_popup_window := PopupCleanExif {
         height: root.height;
         width: root.width;
+        x: 0.0; y: 0.0;
         title_text: Translations.clean_text;
-
-        x: parent.x + (root.width - self.popup_width) / 2.0;
-        y: parent.y + (parent.height - self.popup_height) / 2.0;
 
         action_confirmed() => {
             Callabler.clean_exif_items();
@@ -350,9 +330,7 @@ export component MainWindow inherits Window {
     clean_cache_popup_window := PopupCleanCache {
         height: root.height;
         width: root.width;
-
-        x: parent.x + (root.width - self.popup_width) / 2.0;
-        y: parent.y + (parent.height - self.popup_height) / 2.0;
+        x: 0.0; y: 0.0;
 
         start_cleaning() => {
             Callabler.start_cache_cleaning();
@@ -366,18 +344,14 @@ export component MainWindow inherits Window {
     other_apps_popup_window := PopupOtherApps {
         height: root.height;
         width: root.width;
-
-        x: parent.x + (root.width - self.popup_width) / 2.0;
-        y: parent.y + (parent.height - self.popup_height) / 2.0;
+        x: 0.0; y: 0.0;
     }
 
     crop_video_popup_window := PopupCropVideo {
         height: root.height;
         width: root.width;
+        x: 0.0; y: 0.0;
         title_text: Translations.crop_videos_text;
-
-        x: parent.x + (root.width - self.popup_width) / 2.0;
-        y: parent.y + (parent.height - self.popup_height) / 2.0;
 
         action_confirmed() => {
             Callabler.crop_video_items();
@@ -387,10 +361,8 @@ export component MainWindow inherits Window {
     reencode_video_popup_window := PopupReencodeVideo {
         height: root.height;
         width: root.width;
+        x: 0.0; y: 0.0;
         title_text: Translations.reencode_videos_text;
-
-        x: parent.x + (root.width - self.popup_width) / 2.0;
-        y: parent.y + (parent.height - self.popup_height) / 2.0;
 
         action_confirmed() => {
             Callabler.reencode_video_items();
@@ -400,11 +372,9 @@ export component MainWindow inherits Window {
     hardlink_popup_window := PopupActionConfirm {
         height: root.height;
         width: root.width;
+        x: 0.0; y: 0.0;
         title_text: Translations.hardlink_text;
         confirmation_text: Translations.hardlink_confirmation_text;
-
-        x: parent.x + (root.width - self.popup_width) / 2.0;
-        y: parent.y + (parent.height - self.popup_height) / 2.0;
 
         action_confirmed => {
             Callabler.hardlink_items();
@@ -414,11 +384,9 @@ export component MainWindow inherits Window {
     softlink_popup_window := PopupActionConfirm {
         height: root.height;
         width: root.width;
+        x: 0.0; y: 0.0;
         title_text: Translations.softlink_text;
         confirmation_text: Translations.softlink_confirmation_text;
-
-        x: parent.x + (root.width - self.popup_width) / 2.0;
-        y: parent.y + (parent.height - self.popup_height) / 2.0;
 
         action_confirmed => {
             Callabler.softlink_items();
@@ -438,7 +406,7 @@ export component MainWindow inherits Window {
         y: 0;
         width: root.width;
         height: root.height;
-        background: #808080cc;
+        background: ColorPalette.scrim_background_color;
         z: 1000;
 
         // Absorb all keyboard events so nothing behind the overlay can be triggered
@@ -464,7 +432,7 @@ export component MainWindow inherits Window {
             height: parent.height;
             text: Translations.file_dialog_open_text;
             font-size: FontSizes.header;
-            color: #ffffff;
+            color: ColorPalette.scrim_text_color;
             vertical-alignment: center;
             horizontal-alignment: center;
             wrap: TextWrap.word-wrap;

@@ -1,25 +1,21 @@
 # Window titles
 window_settings_title = تنظیمات
-window_main_title = چکاواک (همیپ)
+window_main_title = Czkawka (سکسکه)
 window_progress_title = سkenنگ
 window_compare_images = مقایسه تصاویر
 # General
-general_ok_button = اوکی
+general_ok_button = بله
 general_close_button = بسته شود
 # Krokiet info dialog
-krokiet_info_title = معرفی کرکیه - نسخه جدید CzKawkA
+krokiet_info_title = توجه: این ویژگی منسوخ شده است
 krokiet_info_message =
-    کروکیِت نسخه جدید، بهبود یافته، سریع‌تر و قابل اعتمادتر رابط کاربری GTK Czkawka است!
+    Czkawka GTK 12.0، آخرین نسخه منتشر شده است. هیچ به‌روزرسانی، ویژگی جدید یا رفع باگ دیگری برای آن برنامه‌ریزی نشده است.
     
-    اجرای آن آسان‌تر و مقاوم‌تر در برابر تغییرات سیستم است، زیرا فقط به کتابخانه‌های اصلی موجود در اکثر سیستم‌ها به صورت پیش‌فرض وابسته است.
+    اکثر ویژگی‌های Czkawka GTK در Krokiet موجود است، معمولاً در یک فرم ساده‌تر، سریع‌تر و پایدارتر. Krokiet همچنین ویژگی‌ها و بهبودهای جدیدی را اضافه می‌کند که در نسخه GTK امکان‌پذیر نبودند.
     
-    کروکیِت همچنین ویژگی‌هایی را به همراه دارد که Czkawka فاقد آن‌هاست، از جمله تصاویر کوچک در حالت مقایسه ویدیو، یک پاک‌کن EXIF، گزینه‌های پیشرفت برای انتقال/کپی/حذف فایل یا گزینه‌های مرتب‌سازی گسترده.
+    اگر هنوز از Czkawka GTK استفاده می‌کنید، انتقال به Krokiet باید آسان باشد، زیرا رابط کاربری مشابهی دارد، وابستگی‌های کمتری دارد و از پشتیبانی بهتر بین پلتفرم‌های مختلف برخوردار است.
     
-    آن را امتحان کنید و تفاوت را ببینید!
-    
-    Czkawka همچنان با رفع باگ‌ها و به‌روزرسانی‌های جزئی از طرف من دریافت خواهد شد، اما تمام ویژگی‌های جدید به طور انحصاری برای کروکیِت توسعه خواهند یافت و هر کسی می‌تواند ویژگی‌های جدید، افزودن حالت‌های از دست رفته یا گسترش بیشتر Czkawka را ارائه دهد.
-    
-    PS: این پیام باید فقط یک بار ظاهر شود. اگر دوباره ظاهر شد، متغیر محیطی CZKAWKA_DONT_ANNOY_ME را به هر مقدار غیر خالی تنظیم کنید.
+    توجه: این پیام فقط باید یک بار نمایش داده شود. اگر دوباره ظاهر شد، متغیر محیطی CZKAWKA_DONT_ANNOY_ME را با یک مقدار غیر تهی تنظیم کنید.
 # Main window
 music_title_checkbox = عنوان
 music_artist_checkbox = هنرپرداز
@@ -57,11 +53,11 @@ duplicate_case_sensitive_name = متن حساس به بیانیه
 duplicate_case_sensitive_name_tooltip =
     وقتی فعال است، تنها رکوردهایی را در گروه گذاری می‌کند که دقیقاً نام آن‌ها مشابه هستند مانند Żołd <-> Żołd
     
-    停用 اینگونde برای گروه‌بندی نام‌ها در نظر نمی‌گیرد که هر حرف چقدر تقریب زدن دارد مانند żoŁD <-> Żołd
+    هنگامی که غیرفعال است، این گونه برای گروه‌بندی نام‌ها در نظر نمی‌گیرد که هر حرف چقدر تقریب دارد مانند żoŁD <-> Żołd
 duplicate_mode_size_name_combo_box = حجم و نام
 duplicate_mode_name_combo_box = نام
 duplicate_mode_size_combo_box = اندازه
-duplicate_mode_hash_combo_box = Hash
+duplicate_mode_hash_combo_box = هش
 duplicate_hash_type_tooltip =
     Czkawka ۳ نوع هاش می‌پذیرد:
     
@@ -100,6 +96,7 @@ image_hash_alg_tooltip =
     هر یک این‌ها نقطه قوت و ضعف کلیدی دارند و برای تصاویر مختلف همگرایتر یا نامطلوبتر می‌توانند عملکرد خود را نشان دهند.
     
     بنابراین، برای تعیین بهترین یکی برای شما، آزمون دستی ضروری است.
+image_geometric_invariance_tooltip = همچنین، نسخه‌های آینه‌ای/برگشت‌شده و در صورت امکان، نسخه‌های چرخیده از هر تصویر را نیز مقایسه کنید. این کار دقت تطابق را افزایش می‌دهد، اما زمان محاسبه هش را بیشتر می‌کند.
 big_files_mode_combobox_tooltip = می‌پذیرد جستجوی فایل‌های کوچکتر/بزرگتر را
 big_files_mode_label = فایل‌های بررسی شده
 big_files_mode_smallest_combo_box = تازیست
@@ -139,6 +136,7 @@ main_tree_view_column_codec = کدک
 main_label_check_method = روش چک کردن
 main_label_hash_type = نوع هاش
 main_label_hash_size = سایز هاش
+main_label_geometric_invariance = ناوردایی هندسی
 main_label_size_bytes = حجم (بایت)
 main_label_min_size = مین
 main_label_max_size = مکس
@@ -174,15 +172,10 @@ upper_manual_add_included_button_tooltip =
 upper_add_included_button_tooltip = دایرکتوری جدید به جستجو اضافه کنید.
 upper_remove_included_button_tooltip = پوشه را از جستجو حذف کنید.
 upper_manual_add_excluded_button_tooltip =
-    مدیریت نام دایرکتوری استراحت شده را به صورت håد良心化处理结果：
-    保持相同的语气和风格。保留任何特殊格式或占位符。
-    仅返回翻译文本，不提供解释或其他额外文本。
-    
-    ترجمه:
-    نام دایرکتوری استراحت شده را به صورت håد و يدی اضافه کنید.
+    نام دایرکتوری مستثنی را به صورت دستی اضافه کنید.
     
     برای اضافه کردن چندین مسیر همزمان، آن‌ها را با ؛ جدا کنید;
-    /home/roman;/home/krokiet دو دایرکتوری /home/roman و /home/keokiet را اضافه خواهد کرد
+    /home/roman;/home/krokiet دو دایرکتوری /home/roman و /home/krokiet را اضافه خواهد کرد
 upper_add_excluded_button_tooltip = پوشه‌ای برای جستجوی مورد بندی خارج شود.
 upper_remove_excluded_button_tooltip = دایرکتوری را از مورد نادیده‌گرفتن حذف کنید.
 upper_notebook_items_configuration = تنظیم‌های موارد
@@ -235,15 +228,13 @@ popover_custom_regex_check_button_entry_tooltip =
     مثال کاربردی:
     /usr/bin/ziemniak.txt را با /ziem[a-z]+ پیدا کرد.
     
-    این مورد استفاده‌ی پیاده‌سازی پیش‌فرض Rust برای Regular Expression است. شما می‌توانید بیشتر درباره آن در این لینک فهم득 بگیرید: https://docs.rs/regex.
+    این مورد استفاده‌ی پیاده‌سازی پیش‌فرض Rust برای Regular Expression است. شما می‌توانید بیشتر درباره آن در این لینک بخوانید: https://docs.rs/regex.
 popover_custom_case_sensitive_check_button_tooltip =
     توانایی تشخیص حساس به حروف بزرگ و کوچک را فعال می‌کند.
     
     در صورت غیرفعال بودن، /home/* هر دو /HoMe/roman و /home/roman را پیدا خواهد کرد.
 popover_custom_not_all_check_button_tooltip =
     پیش‌بینی تهیه همه رکورد در گروه را جلوگیری می‌کند.
-    
-    با فعال بودن این تنظیم به طور پی‌这里是翻译的后半部分，按照要求保持格式和占位符不变：
     
     این معیار اولیه فعال است، زیرا در بسیاری از موارد، نمی‌توانید هر دو فایل اصلی و تکراری را پاک کنید و می‌خواهید حداقل یک فایل را نگه دارید.
     
@@ -295,7 +286,7 @@ bottom_move_button_tooltip =
     وقتی سعی می‌کنید دو فایل با نام تکراری را به مسیری منتقل کنید، دومی با خطا مواجه خواهد شد.
 bottom_sort_button_tooltip = فرمت فایل‌ها/دسته‌بندی‌ها را بر اساس روش مورد انتخاب تنظیم کند.
 bottom_compare_button_tooltip = مقایسه تصاویر در گروه را انجام دهید.
-bottom_show_errors_tooltip = نمایش/起底部文本面板。.
+bottom_show_errors_tooltip = نمایش/پنهان کردن پنل متن پایین.
 bottom_show_upper_notebook_tooltip = نمایش/پنهان کردن پanel بالایی نوت‌بук.
 # Progress Window
 progress_stop_button = وقفه
@@ -309,9 +300,34 @@ about_repository_button = آرشیو
 about_donation_button = تبرعات
 about_instruction_button = ارتباطات
 about_translation_button = ترجمه:
+about_other_apps_button = برنامه‌های دیگر
+about_other_apps_dialog_title = سایر برنامه‌های شرکت qarmin
+about_other_apps_open_source_note = تمام نرم‌افزارهای ذکر شده، رایگان و متن‌باز هستند.
+about_other_apps_open_button = باز
+about_other_apps_szyszka_desc = یک ابزار تغییر نام فایل، سریع و قدرتمند.
+about_other_apps_mykrut_desc = مدیریت فایل لینوکس، ساده، سریع و با رویکرد خاص.
+about_other_apps_dcmki_viewer_desc = یک نمایشگر ساده برای فایل‌های DICOM.
+about_other_apps_video_thumbnailer_desc = لایه‌ نمایانگر (Wrapper) برای تولیدکننده تصاویر کوچک ویدیو که در Czkawka استفاده می‌شود.
+about_other_apps_space_finder_desc = یافتن سریع و آسان بزرگترین فایل‌ها در سیستم شما.
+about_other_apps_system_info_collector_desc = مصرف حافظه RAM و پردازنده CPU را از سیستم عامل جمع‌آوری کرده و آن را به صورت نمودار نمایش می‌دهد.
 # Header
 header_setting_button_tooltip = دیالوگ تنظیمات را باز می‌کند.
 header_about_button_tooltip = پنجره دیالوگ با اطلاعات دربارهٔ اپ را باز می‌کند.
+header_krokiet_button_tooltip = کروکیِت را امتحان کنید - نسخه جدید و بهبود یافته آن!
+# Krokiet promo dialog
+krokiet_promo_title = با کروکیِت آشنا شوید!
+krokiet_promo_message =
+    سلام، کاربر شجاع Czkawka!
+    
+    به وضوح، نیرو (Force) با شماست، اما Krokiet نیست - یک جایگزین جدیدتر، سریع‌تر، سبک‌تر و به مراتب جذاب‌تر (البته با فرض اینکه برنامه‌ها می‌توانند جذاب باشند) برای پاکسازی فایل‌های تکراری.
+    
+    Krokiet شامل تمام ویژگی‌هایی است که مردم در مورد Czkawka دوست داشتند. این برنامه کاملاً رایگان، متن‌باز است، یک رابط کاربری منحصربه‌فرد و ساده دارد (که هم مورد تحسین و هم مورد انتقاد بسیاری قرار گرفته است)، ویژگی‌های جدید زیادی را ارائه می‌دهد، وابستگی‌های کمتری دارد و به طور قابل‌توجهی در پلتفرم‌های مختلف، عملکرد مطمئن‌تری دارد.
+    
+    و اگر به نحوی این موضوع را از دست داده‌اید، برنامه‌ای حتی جدیدتر از Krokiet نیز وجود دارد: Cedinia، که عمدتاً برای دستگاه‌های اندروید و استفاده با صفحه لمسی طراحی شده است.
+    
+    Czkawka GTK برای ما بسیار مفید بود، اما عمر آن به پایان رسیده است.
+krokiet_promo_link_download = دانلود Krokiet/Cedinia
+krokiet_promo_link_project = صفحه پروژه
 
 # Settings
 
@@ -320,7 +336,7 @@ header_about_button_tooltip = پنجره دیالوگ با اطلاعات درب
 
 settings_number_of_threads = تعداد خيوان‌های استفاده شده
 settings_number_of_threads_tooltip = تعداد سرورهای استفاده‌شده، ۰ به معنای استفاده از تمامی سرورهای در دسترس است.
-settings_use_rust_preview = بجای gtk، از بиблиو梯es خارجی برای بارگذاری نمایش‌ها استفاده کنید
+settings_use_rust_preview = به جای gtk، از کتابخانه‌های خارجی برای بارگذاری پیش‌نمایش‌ها استفاده کنید
 settings_use_rust_preview_tooltip =
     استفاده از پیش‌نماهای GTK گاهی سریع‌تر خواهد بود و حمایت از بیشتر فرمت‌ها را دارد، اما گاهی دقیقاً عکس آن است.
     
@@ -365,9 +381,9 @@ settings_multiple_delete_outdated_cache_checkbutton_tooltip =
     
     در صورت داشتن صد هزار رکورد در کش، پیشنهاد می‌شود این گزینه را فعال کنید، که خشونت بارگذاری/ذخیره کش در شروع و پایان پرسپект را تسریع خواهد کرد.
 settings_notebook_general = عمومی
-settings_notebook_duplicates = 副本
+settings_notebook_duplicates = تکراری‌ها
 settings_notebook_images = سایر عکس‌های مشابه
-settings_notebook_videos = 비슷 آموزش ویدیو
+settings_notebook_videos = ویدیوهای مشابه
 
 ## Multiple - settings used in multiple tabs
 
@@ -440,44 +456,14 @@ compute_found_invalid_symlinks = { $number_files } لینک معلق نامعت�
 compute_found_broken_files = فایل‌های شکسته { $number_files } را در { $time } پیدا کردم
 compute_found_bad_extensions = فایل‌هایی با پسوند نامعتبر در { $time } شماره { $number_files } پیدا کرد
 # Progress window
-progress_scanning_general_file =
-    { $file_number ->
-        [one] Scanned { $file_number } file
-       *[other] Scanned { $file_number } files
-    }
-progress_scanning_extension_of_files = رسیدن افزوده { $file_checked }/{ $all_files } فایل
-progress_scanning_broken_files = 检讨 شده { $file_checked }/{ $all_files } فایل ({ $data_checked }/{ $all_data })
-progress_scanning_video = همچین تoning و { $file_checked }/{ $all_files } ویدیو
-progress_creating_video_thumbnails = تصاویر کوچک آماده شده از { $file_checked }/{ $all_files } ویدیو
-progress_scanning_image = قلمری از { $file_checked }/{ $all_files } تصویر ({ $data_checked }/{ $all_data })
-progress_comparing_image_hashes = مقایسه { $file_checked }/{ $all_files } علامت شش تصویر
-progress_scanning_music_tags_end = مقایسه برچسب‌های { $file_checked }/{ $all_files } فایل موسیقی
-progress_scanning_music_tags = برچسب‌های آهنگ { $file_checked }/{ $all_files } را بخوانید
-progress_scanning_music_content_end = مقایسه от亮指纹 از { $file_checked }/{ $all_files } فایل موسیقی
-progress_scanning_music_content = چربیگانه چک شده از { $file_checked }/{ $all_files } فایل موسیقی ({ $data_checked }/{ $all_data })
-progress_scanning_empty_folders =
-    { $folder_number ->
-        [one] Scanned { $folder_number } folder
-       *[other] Scanned { $folder_number } folders
-    }
-progress_scanning_size = حجم سcanشده فایل №{ $file_number }
-progress_scanning_size_name = نام و اندازه سند مورد بررسی { $file_number }
-progress_scanning_name = نام فایل { $file_number } را برگشت دهید
-progress_analyzed_partial_hash = جزییات هش部门/ TümDosya ({ $data_checked }/{ $all_data }) را بررسی کرد /{ $file_checked }/{ $all_files }
-progress_analyzed_full_hash = تحلیل کامل هش فایل‌های "{ $file_checked }/{ $all_files }" ({ $data_checked }/{ $all_data })
-progress_prehash_cache_loading = Cache پیش هاش خارج شده را بارگذاری کنید
-progress_prehash_cache_saving = مخفف پیش‌هایش کاشینگ را ذخیره کنید
-progress_hash_cache_loading = برخیسندهٔ حاشیه هش
-progress_hash_cache_saving = ذهنشدن حاشیهٔ کشیده
-progress_cache_loading = فیلتر کشی را بارگذاری می‌کنیم
-progress_cache_saving = ذخیره کشی
 progress_current_stage = مرحله حاضر:{ "  " }
 progress_all_stages = همه مراحل:{ "  " }
 # Saving loading 
 saving_loading_saving_success = پیکربندی را به فایل { $name } ذخیره شد.
 saving_loading_saving_failure = غیرهایی برای ذخیره داده‌های تنظیم‌های سازنده در فایل { $name } وجود ندارد، علت { $reason }.
-saving_loading_reset_configuration = 구성 حاضر تهی شد.
+saving_loading_reset_configuration = پیکربندی به حالت پیش‌فرض بازگشت.
 saving_loading_loading_success = انگشتی که به درستی تنظیم شده تطبيقی ترجیح دارد.
+saving_loading_no_config_file = فایل پیکربندی یافت نشد، از تنظیمات پیش‌فرض استفاده می‌شود.
 saving_loading_failed_to_create_config_file = ایجاد فایل کonfig شکست خورد، دلیل "{ $reason }" برای پت { $path }".
 saving_loading_failed_to_read_config_file = Niet می‌توان از کنسولگی را از "{ $path }" بارگذاری کرد چون آن وجود ندارد یا یک فایل نیست.
 saving_loading_failed_to_read_data_from_file = نمی‌توان از پرونده "{ $path }" داده‌ها را خواند، دلیل "{ $reason }".
@@ -501,7 +487,7 @@ delete_items_label = { $items } فایل‌هایی خواهند پاک شد.
 delete_items_groups_label = { $items } فایل از { $groups } گروه خواهند شوی.
 hardlink_failed = به ترکیب مجدد { $name } به { $target } امکان پذیر نشد، دلیل { $reason }
 hard_sym_invalid_selection_title_dialog = بازخورد نامعتبر با گروه‌هایی از جمله
-hard_sym_invalid_selection_label_1 = در برخی گروه‌ها تنها یک رکورد انتخاب شده است و آن مورد忽略。.
+hard_sym_invalid_selection_label_1 = در برخی گروه‌ها تنها یک رکورد انتخاب شده است و آن مورد نادیده گرفته می‌شود.
 hard_sym_invalid_selection_label_2 = برای توانا به صورت سخت/هم لینک این فایل‌ها، حداقل دو نتیجه در گروه باید انتخاب شوند.
 hard_sym_invalid_selection_label_3 = اولین در گروه به عنوان اصلی شناخته می‌شود و تغییر نمی‌کند اما دوم و بعدی عرضه شده‌اند.
 hard_sym_link_title_dialog = تأیید لینک

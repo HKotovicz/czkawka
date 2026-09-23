@@ -2,11 +2,12 @@ import { LineEdit } from "std-widgets.slint";
 import { Callabler } from "../globals/callabler.slint";
 import { Translations } from "../globals/translations.slint";
 import { FontSizes } from "../globals/fonts.slint";
+import { ColorPalette } from "../globals/color_palette.slint";
 import { PopupBase } from "../components/popup_base.slint";
 
 export component PopupRenameFile inherits Rectangle {
-    out property <length> popup_width: 500px;
-    out property <length> popup_height: 185px;
+    private property <length> popup_width: 500px;
+    private property <length> popup_min_height: 185px;
     in-out property <int> row_idx: -1;
     private property <string> original_name;
     private property <string> text_data;
@@ -14,7 +15,7 @@ export component PopupRenameFile inherits Rectangle {
     private property <bool> name_empty: text_data == "";
     private property <bool> name_unchanged: text_data == original_name;
     // Filesystem check is deferred to Rust; only run it once the name is a real, changed candidate.
-    private property <bool> target_exists: !name_empty && !name_unchanged && Callabler.rename_target_exists(row_idx, text_data);
+    private property <bool> target_exists: !name_empty && !name_unchanged && Callabler.rename_target_exists({ row_idx: row_idx, new_name: text_data });
 
     private property <string> warning_text:
         name_unchanged ? Translations.popup_rename_single_same_name_text
@@ -25,7 +26,9 @@ export component PopupRenameFile inherits Rectangle {
 
     popup_window := PopupBase {
         width: popup_width;
-        height: popup_height;
+        popup_min_height: popup_min_height;
+        x: (parent.width - popup_width) / 2.0;
+        y: (parent.height - self.height) / 2.0;
         title_text <=> Translations.popup_rename_single_title_text;
         enabled_ok_button: !name_empty && !name_unchanged && !target_exists;
 
@@ -40,7 +43,7 @@ export component PopupRenameFile inherits Rectangle {
             Text {
                 text: warning_text;
                 visible: warning_text != "";
-                color: #e74c3c;
+                color: ColorPalette.error_text_color;
                 font-size: FontSizes.normal;
                 wrap: word-wrap;
                 horizontal-alignment: center;
@@ -48,7 +51,7 @@ export component PopupRenameFile inherits Rectangle {
         }
 
         ok_clicked => {
-            Callabler.rename_single_file(root.row_idx, text_data);
+            Callabler.rename_single_file({ row_idx: root.row_idx, new_name: text_data });
         }
     }
 

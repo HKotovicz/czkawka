@@ -1,25 +1,21 @@
 # Window titles
 window_settings_title = Налаштування
-window_main_title = Czkawka («Гикавка»)
+window_main_title = Czkawka (Гикавка)
 window_progress_title = Сканування
 window_compare_images = Порівняння зображень
 # General
 general_ok_button = Гаразд
 general_close_button = Закрити
 # Krokiet info dialog
-krokiet_info_title = Представляємо Krokiet - Нова версія Czkawka
+krokiet_info_title = Застереження про занесення
 krokiet_info_message =
-    Крокієт - це нова, покращена, швидша та надійніша версія Czkawka GTK GUI!
+    Останній реліз - це Чкавка GTK 12.0. Без подальших оновлень, функцій і виправлення помилок не заплановано.
     
-    Він легше запускається та більш стійкий до змін у системі, оскільки покладається лише на основні бібліотеки, які за замовчуванням доступні на більшості систем.
+    Більшість функцій від Czkawka GTK доступні в Krokiet, зазвичай у простішому, швидшому та стабільнішій формі. Крокіет також додає нові можливості та покращення, які були неможливі у версії GTK.
     
-    Крокієт також приносить функції, яких немає в Czkawka, включаючи мініатюри в режимі порівняння відео, EXIF очищувач, прогрес переміщення/копіювання/видалення файлів або розширені опції сортування.
+    Якщо ви все ще використовуєте Чкаука GTK, перейдіть на Krokiet повинен бути простим, оскільки він має подібний інтерфейс, менше залежностей і більшу взаємозафункціональну підтримку.
     
-    Спробуйте його та подивіться на різницю!
-    
-    Czkawka продовжуватиме отримувати виправлення помилок та невеликі оновлення від мене, але всі нові функції будуть розроблені виключно для Крокієта, і будь-хто вільний пропонувати нові функції, додавати відсутні режими або розширювати Czkawka далі.
-    
-    P.S.: Це повідомлення має з’явитися лише один раз. Якщо воно з’являється знову, встановіть змінну середовища CZKAWKA_DONT_ANNOY_ME на будь-яке не порожнє значення.
+    PS: Це повідомлення має з'явитися лише один раз. Якщо воно з'являється знову, встановіть змінну середовища CZKA_DONT_ANNOY_ME у будь-яку непусту величину.
 # Main window
 music_title_checkbox = Найменування
 music_artist_checkbox = Виконавець
@@ -100,6 +96,7 @@ image_hash_alg_tooltip =
     Кожен з них має і сильні і слабкі точки, і іноді може призвести до кращого і іноді гірших результатів для різних зображень.
     
     Таким чином, щоб визначити найкращу для вас, потрібно ручне тестування.
+image_geometric_invariance_tooltip = Також порівнювати дзеркальні/перевернуті та обернені варіанти кожного зображення. Це покращує відповідність, але збільшує час хешування.
 big_files_mode_combobox_tooltip = Дозволяє шукати найменші або найбільші файли
 big_files_mode_label = Перевірені файли
 big_files_mode_smallest_combo_box = Найменший
@@ -139,6 +136,7 @@ main_tree_view_column_codec = Кодек
 main_label_check_method = Метод перевірки
 main_label_hash_type = Тип хешу
 main_label_hash_size = Розмір хешу
+main_label_geometric_invariance = Геометрична інваріант
 main_label_size_bytes = Розмір (байт)
 main_label_min_size = Мін
 main_label_max_size = Макс
@@ -304,9 +302,34 @@ about_repository_button = Репозиторій
 about_donation_button = Пожертва
 about_instruction_button = Інструкція
 about_translation_button = Переклад
+about_other_apps_button = Інші додатки
+about_other_apps_dialog_title = Інші додатки від qarmin
+about_other_apps_open_source_note = Всі перераховані програми є безкоштовними та з відкритим вихідним кодом.
+about_other_apps_open_button = Відкриті
+about_other_apps_szyszka_desc = Швидке та потужне перейменування файлів.
+about_other_apps_mykrut_desc = Простий швидкий та думка файлового менеджера Linux.
+about_other_apps_dcmki_viewer_desc = Простий глядач DICOM.
+about_other_apps_video_thumbnailer_desc = Обгортка навколо генератора мініатюр відео в Чкавці.
+about_other_apps_space_finder_desc = Простий пошук найбільших файлів у вашій системі.
+about_other_apps_system_info_collector_desc = Збирає використання RAM/CPU з ОС та показує його як графіки.
 # Header
 header_setting_button_tooltip = Відкриває вікно налаштувань.
 header_about_button_tooltip = Відкриває діалогове вікно з інформацією про додаток.
+header_krokiet_button_tooltip = Спробуйте Крокіет - нову і поліпшену версію!
+# Krokiet promo dialog
+krokiet_promo_title = Познайомтеся з Крокетом!
+krokiet_promo_message =
+    Привіт, відважний користувачу Czkawka!
+    
+    Сила явно з вами, але Krokiet - ні. Krokiet - це новіша, швидша, легша та значно привабливіша (якщо програми взагалі можуть бути привабливими) альтернатива для очищення дублікатів.
+    
+    Krokiet включає все, що людям подобалося в Czkawka. Він повністю безкоштовний, має відкритий вихідний код, унікальний і простий інтерфейс (який багато хто хвалив і критикував), пропонує безліч нових функцій, використовує менше залежностей і працює набагато надійніше на різних платформах.
+    
+    І якщо ви якось пропустили, вже існує ще новіша програма, ніж Krokiet - Cedinia, розроблена в основному для пристроїв Android і роботи з сенсорним екраном.
+    
+    Czkawka GTK добре нам служила, але її час сплив.
+krokiet_promo_link_download = Завантажити Крокет/Cedini
+krokiet_promo_link_project = Сторінка проекту
 
 # Settings
 
@@ -436,37 +459,6 @@ compute_found_invalid_symlinks = Знайдено { $number_files } неприп
 compute_found_broken_files = Знарядно { $number_files } пошкоджених файлів за час { $time }
 compute_found_bad_extensions = Знайдено { $number_files } файли з недійсними розширеннями в { $time }
 # Progress window
-progress_scanning_general_file =
-    { $file_number ->
-        [one] Відсканований { $file_number } файл
-       *[other] Відсканований { $file_number } файли
-    }
-progress_scanning_extension_of_files = Перевірено розширення { $file_checked }/{ $all_files } файлу
-progress_scanning_broken_files = Перевірено { $file_checked }/{ $all_files } файл ({ $data_checked }/{ $all_data })
-progress_scanning_video = Створено відео з { $file_checked }/{ $all_files }
-progress_creating_video_thumbnails = Створені мініатюри { $file_checked }/{ $all_files } відео
-progress_scanning_image = Створено зображення { $file_checked }/{ $all_files } ({ $data_checked }/{ $all_data })
-progress_comparing_image_hashes = Порівняо { $file_checked }/{ $all_files } хеш зображення
-progress_scanning_music_tags_end = Порівняті теґи { $file_checked }/{ $all_files } музичний файл
-progress_scanning_music_tags = Читати теги { $file_checked }/{ $all_files } музичного файлу
-progress_scanning_music_content_end = Відбиток порівняльного відбитка { $file_checked }/{ $all_files } музичного файлу
-progress_scanning_music_content = Розраховано відбиток пальця { $file_checked }/{ $all_files } музичного файлу ({ $data_checked }/{ $all_data })
-progress_scanning_empty_folders =
-    { $folder_number ->
-        [one] Скановано { $folder_number } папку
-       *[other] Скановано { $folder_number } папки
-    }
-progress_scanning_size = Відсканований розмір файлу { $file_number }
-progress_scanning_size_name = Відскановане ім'я і розмір файлу { $file_number }
-progress_scanning_name = Відскановано ім'я файлу { $file_number }
-progress_analyzed_partial_hash = Проаналізовано частковий хеш { $file_checked }/{ $all_files } файлів ({ $data_checked }/{ $all_data })
-progress_analyzed_full_hash = Проаналізовано повний хеш { $file_checked }/{ $all_files } файлів ({ $data_checked }/{ $all_data })
-progress_prehash_cache_loading = Завантаження цільового кешу
-progress_prehash_cache_saving = Збереження цілковитого кешу
-progress_hash_cache_loading = Завантаження схованки
-progress_hash_cache_saving = Збереження кешу кешу
-progress_cache_loading = Завантаження кешу
-progress_cache_saving = Збереження кешу
 progress_current_stage = Поточний етап: { "  " }
 progress_all_stages = Усі етапи: { "  " }
 # Saving loading 
@@ -474,6 +466,7 @@ saving_loading_saving_success = Збережено конфігурацію в �
 saving_loading_saving_failure = Не вдалося зберегти дані конфігурації у файл { $name }, причина { $reason }.
 saving_loading_reset_configuration = Поточна конфігурація була очищена.
 saving_loading_loading_success = Установки програми коректно завантажені.
+saving_loading_no_config_file = Конфігураційний файл не знайдено, з використанням типових налаштувань.
 saving_loading_failed_to_create_config_file = Не вдалося створити файл налаштувань "{ $path }", причина "{ $reason }".
 saving_loading_failed_to_read_config_file = Неможливо завантажити конфігурацію з «{ $path }», тому що або такого файлу не існує, або це не файл.
 saving_loading_failed_to_read_data_from_file = Не вдалося прочитати дані з файлу "{ $path }", причина "{ $reason }".

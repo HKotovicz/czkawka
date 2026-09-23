@@ -1,6 +1,6 @@
 [package]
 name = "krokiet"
-version = "11.0.1"
+version = "12.0.2"
 authors = ["Rafał Mikrut <mikrutrafal@protonmail.com>"]
 edition = "2024"
 rust-version = "1.94.1"
@@ -11,7 +11,7 @@ repository = "https://github.com/qarmin/czkawka"
 build = "build.rs"
 
 [dependencies]
-czkawka_core = { version = "11.0.1", path = "../czkawka_core" }
+czkawka_core = { version = "12.0.2", path = "../czkawka_core" }
 chrono = "0.4.38"
 open = "5.3"
 crossbeam-channel = "0.5"
@@ -36,10 +36,10 @@ rust-embed = { version = "8.5", features = ["debug-embed"] }
 # Try to use only needed features from https://github.com/slint-ui/slint/blob/master/api/rs/slint/Cargo.toml#L23-L31
 #slint = { path = "/home/rafal/test/slint/api/rs/slint/", default-features = false, features = [
 #slint = { git = "https://github.com/slint-ui/slint.git", default-features = false, features = [
-slint = { version = "1.15.0", default-features = false, features = [
+slint = { version = "=1.17.0", default-features = false, features = [
     "std",
     "backend-winit",
-    "compat-1-2"
+    "compat-1-2",
 ] }
 
 rodio = { version = "0.22.0", default-features = false, features = ["playback", "symphonia-all"], optional = true }
@@ -47,12 +47,12 @@ notify-rust = { version = "4" }
 
 # Easier cross-compilation of app to e.g. 32 bit os, by using dlopen instead of linking libraries at compile time
 # Must match version used in slint
-fontique = { version = "=0.8.0", default-features = false, features = ["fontconfig-dlopen", "std"] }
+fontique = { version = "=0.10.0", default-features = false, features = ["fontconfig-dlopen", "std"] }
 
 [build-dependencies]
 #slint-build = { path = "/home/rafal/test/slint/api/rs/build/"}
 #slint-build = { git = "https://github.com/slint-ui/slint.git" }
-slint-build = "1.15"
+slint-build = "=1.17.0"
 
 [features]
 default = ["winit_femtovg", "winit_software"]

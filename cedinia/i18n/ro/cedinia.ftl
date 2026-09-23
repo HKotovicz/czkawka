@@ -1,7 +1,6 @@
 # Cedinia - English (fallback)
 
 # App / top bar titles
-app_name = Cedinia
 tool_duplicate_files = Duplicate
 tool_empty_folders = Golire dosare
 tool_similar_images = Imagini similare
@@ -13,6 +12,7 @@ tool_bad_extensions = Extensii rele
 tool_same_music = Duplicate Muzică
 tool_bad_names = Nume greșit
 tool_exif_remover = Date EXIF
+tool_similar_videos = Videoclipuri similare (Audio)
 tool_directories = Directoare
 tool_settings = Setări
 # Home screen tool card descriptions
@@ -27,6 +27,7 @@ home_bad_extensions_description = Fișiere cu extensie invalidă
 home_same_music_description = Fişiere audio similare după etichete
 home_bad_names_description = Fișiere cu caractere problematice în nume
 home_exif_description = Imagini cu metadate EXIF
+home_similar_videos_description = Găsiți videoclipuri cu audio similar
 # Results list
 scanning = Scanare în curs...
 stopping = Oprire...
@@ -35,7 +36,7 @@ press_start = Apăsați START pentru a scana
 select_label = Sel.
 deselect_label = Desel.
 list_label = Listă
-gallery_label = Gal.
+gallery_label = Gal
 # Selection popup
 selection_popup_title = Selectare
 select_all = Selectează tot
@@ -113,6 +114,7 @@ settings_hash_size = Dimensiune hash
 settings_hash_size_desc = Mărimile mai mari au mai puține rezultate pozitive false, dar găsesc și imagini mai puțin similare
 settings_hash_alg = Algoritm hash
 settings_image_filter = Redimensionare filtru
+settings_geometric_invariance = Invarianță geometrică
 settings_ignore_same_size = Ignoră imaginile cu aceleași dimensiuni
 settings_gallery_image_fit_cover = Galerie: recoltă în pătrat
 settings_gallery_image_fit_cover_desc = Umpleți dala; dezactivați pentru a păstra raportul original de aspect
@@ -129,6 +131,10 @@ settings_music_length = Lungime
 settings_music_genre = Gen
 settings_music_bitrate = Debit de biți
 settings_music_approx = Comparare aproximativă a etichetelor
+settings_temporary_files_header = FILURI TEMPORARE
+settings_temporary_files_extensions_label = EXTENSIUNI
+settings_temporary_files_extensions_placeholder = e.g. .tmp, .bak, ~
+settings_temporary_files_reset = Resetare la valorile implicite
 settings_broken_files_header = FILURI BROKEN
 settings_broken_files_note = Scanare intensivă de resurse. Pentru cea mai bună performanță folosește Krokiet pe desktop.
 settings_broken_files_types_label = TIPURI VERIFICATE
@@ -136,6 +142,11 @@ settings_broken_audio = Audio
 settings_broken_pdf = PDF
 settings_broken_archive = Arhivează
 settings_broken_image = Imagine
+settings_broken_font = Font
+settings_broken_markup = Marcaj (JSON/XML/TOML)
+settings_similar_videos_header = VIDEO SIMILAR (AUDIO)
+settings_similar_videos_audio_preset = Presetare asemănare audio
+settings_similar_videos_audio_preset_desc = Controlează cât de strict audio trebuie să se potrivească
 settings_bad_names_header = NAMELE BAD
 settings_bad_names_checks_label = CONTROALE
 settings_bad_names_uppercase_ext = Extensie cu majuscule
@@ -143,6 +154,11 @@ settings_bad_names_emoji = Emoji în nume
 settings_bad_names_space = Spaţii la start/end
 settings_bad_names_non_ascii = Caractere non-ASCII
 settings_bad_names_duplicated = Caractere repetate
+settings_ignore_same_resolution = Ignoră imaginile cu aceeași rezoluție
+# Settings - Appearance section
+settings_appearance_label = APARENȚĂ
+settings_dark_theme = Temă întunecată
+settings_dark_theme_desc = Utilizaţi o schemă de culori întunecată
 # Settings - Diagnostics tab
 diagnostics_header = DIAGNOSTICE
 diagnostics_thumbnails = Cache pentru miniaturi
@@ -152,6 +168,11 @@ diagnostics_clear_thumbnails = Șterge miniaturile
 diagnostics_open_thumbnails_folder = Deschide dosarul
 diagnostics_clear_cache = Golește memoria cache
 diagnostics_open_cache_folder = Deschide dosarul
+diagnostics_export_logs = Exportă jurnalele
+logs_label = Loguri
+logs_export_title = Exportă jurnalele
+logs_export_saved = Jurnale copiate în:
+logs_export_failed = Jurnalele nu au putut fi exportate
 diagnostics_collect_test = Test acces fișier
 diagnostics_collect_test_desc = Verificați câte fișiere sunt accesibile
 diagnostics_collect_test_run = Rulează
@@ -204,6 +225,8 @@ renamed_errors_suffix = erori
 cleaned_exif_prefix = Curățare EXIF din
 cleaned_exif_suffix = fişiere
 cleaned_exif_errors_suffix = erori
+rename_error_read_file_name = Nu se poate citi numele fișierului
+rename_error_read_directory = Directorul nu poate fi citit
 and_more_prefix = ...și
 and_more_suffix = mai mult
 # Gallery / delete popups
@@ -212,7 +235,6 @@ gallery_back = Înapoi
 gallery_confirm_delete = Da, șterge
 deleting_files = Ștergere fișiere...
 stop = Oprește
-files_suffix = fişiere
 scanning_fallback = Scanare...
 app_subtitle = În onoarea Bătăliei din Cedynia (972 CE)
 app_license = Frontend pentru Czkawka Core - GPL-3.0
@@ -223,43 +245,16 @@ scan_completed_notification = Scanare completă - { $file_count } elemente găsi
 # Confirm popups (set from Rust)
 confirm_clean_exif = Sunteţi sigur că doriţi să ştergeţi etichetele EXIF din { $n } selectate?
 confirm_delete_items = Sunteţi sigur că doriţi să ştergeţi { $n } elementele selectate?
-gallery_confirm_delete_msg = Sunteţi pe cale să ştergeţi imaginile { $total_images } în grupurile { $total_groups}.
-gallery_confirm_delete_warning = Toate elementele sunt selectate în grupele { $unsafe_groups}!
+gallery_confirm_delete_msg = Sunteţi pe cale să ştergeţi imaginile { $total_images } în grupurile { $total_groups }.
+gallery_confirm_delete_warning = Toate elementele sunt selectate în grupele { $unsafe_groups }!
 # Settings - SameMusic fingerprint warning
 same_music_fingerprint_warning = Calcularea și compararea amprentelor audio necesită foarte multe resurse și poate dura mult timp. Este recomandat să utilizaţi Krokiet pe un calculator pentru această sarcină.
 # Scan stage labels (shown during scan progress)
-stage_collecting_files = Colectarea fişierelor
-stage_scanning_name = Scanare după nume
-stage_scanning_size_name = Scanare după nume și dimensiune
-stage_scanning_size = Scanare după dimensiune
-stage_pre_hash = Pre-hash
-stage_full_hash = Hashing
-stage_loading_cache = Se încarcă geocutia
-stage_saving_cache = Salvare geocutie
-stage_calculating_image_hashes = Calcularea hash-urilor imaginii
-stage_comparing_images = Compararea imaginilor
-stage_calculating_video_hashes = Calcularea hash-urilor video
-stage_checking_files = Se verifică fișierele
-stage_checking_extensions = Verificare extensii
-stage_checking_names = Verificare nume
-stage_reading_music_tags = Citire etichete muzicale
-stage_comparing_tags = Comparare etichete
-stage_calculating_music_fingerprints = Calcularea amprentelor muzicale
-stage_comparing_fingerprints = Compararea amprentelor
-stage_extracting_exif = Citire etichete EXIF
-stage_creating_video_thumbnails = Creare miniaturi video
-stage_processing_videos = Procesare videoclipuri
-stage_deleting = Ştergere fişiere
-stage_renaming = Redenumire fişiere
-stage_moving = Mutarea fişierelor
-stage_hardlinking = Crearea de legături dure
-stage_symlinking = Crearea de legături simbolice
-stage_optimizing_videos = Optimizarea videoclipurilor
-stage_cleaning_exif = Curățare EXIF
 # Group headers in scan results
 duplicates_group_header = { $count } fişiere x { $per_file } / fişier = { $total } total
 similar_images_group_header = { $count } imagini similare
 same_music_group_header = { $count } piese similare
+similar_videos_group_header = { $count } videoclipuri similare
 # Rename confirmation
 confirm_rename_items = Sunteţi sigur că doriţi să redenumiţi { $n } fişierele selectate?
 # Combo-box option labels (translatable display names)
@@ -270,7 +265,7 @@ option_similarity_high = Ridicat
 option_similarity_medium = Medie
 option_similarity_low = scazut
 option_similarity_very_low = V. Foarte scăzut
-option_similarity_minimal = Minim.
+option_similarity_minimal = Minim
 option_check_method_hash = Hash
 option_check_method_name = Nume
 option_check_method_size_and_name = Dimensiune+Nume
@@ -278,15 +273,10 @@ option_check_method_size = Dimensiune
 option_music_method_tags = Etichete
 option_music_method_audio = Audio
 option_min_size_none = Niciunul
-option_min_size_1kb = 1 KO
-option_min_size_8kb = 8 KO
-option_min_size_64kb = 64 KO
-option_min_size_1mb = 1 Mo
-option_max_size_16kb = 16 KO
-option_max_size_1mb = 1 Mo
-option_max_size_10mb = 10 Mo
-option_max_size_100mb = 100 MO
 option_max_size_unlimited = Nelimitat
+option_audio_preset_identical = Identic
+option_audio_preset_clip = Clip mai lung
+option_audio_preset_similar = Similare
 # Volume labels (shown in the directories screen)
 volume_internal_storage = Stocare internă
 volume_sd_card = Card de memorie (SD Card)
@@ -315,3 +305,14 @@ path_edit_no_newlines = Căile nu pot conține noutăți - cheia nu este permis�
 ctx_menu_title = Deschideți
 ctx_open_file = Deschideți articolul
 ctx_open_folder = Deschide dosarul părinte
+dir_open_folder = Deschide dosarul
+# Compare view
+compare_label = Compară
+compare_loading = Încărcare imagini...
+compare_cancelling = Anulare...
+compare_computing = Calculare diff...
+compare_mode_normal = Lateral
+compare_mode_split = Împarte
+compare_mode_overlay = Suprapunere
+compare_mode_diff = Dif
+compare_res_mismatch = Diferite rezoluții - diff poate fi inexact

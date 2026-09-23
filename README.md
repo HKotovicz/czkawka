@@ -9,7 +9,7 @@
 
 <div align="center"><img src="https://github.com/user-attachments/assets/ed6dfeea-a984-49e8-a621-8d6ae521c760" alt="cedinia_logo" width="600" /></div>
 
-**Cedinia** - experimental Android touch friendly GUI frontend for Czkawka Core, built with Slint.
+**Cedinia** - Android touch friendly GUI frontend for Czkawka Core, built with Slint.
 
 ---
 
@@ -28,7 +28,7 @@
 - **CLI frontend** - for easy automation
 - **GUI frontend** - uses Slint or GTK 4 frameworks
 - **Core library** - allows to reuse functionality in other apps
-- **Android app** - experimental touch-friendly frontend for Android devices
+- **Android app** - touch-friendly frontend for Android devices
 - **No spying** - Czkawka does not have access to the Internet, nor does it collect any user information or statistics
 - **Multilingual** - support multiple languages like Polish, English or Italian
 - **Multiple tools to use**:
@@ -66,9 +66,9 @@ Changelog about each version can be found in [CHANGELOG.md](Changelog.md).
 
 New releases can be found in [Github releases](https://github.com/qarmin/czkawka/releases) and nightly builds also in [Nightly releases](https://github.com/qarmin/czkawka/releases/tag/Nightly)
 
-You can read more about the 11.0.0 release, its new features, and the issues that were fixed in the following articles:
-- English article - https://medium.com/@qarmin/czkawka-krokiet-11-0-0f6cea385934
-- Polish article - https://medium.com/@qarmin/czkawka-krokiet-11-0-c95ee35eccc2
+You can read more about the 12.0 release, its new features, and the issues that were fixed in the following articles:
+- English article - https://medium.com/@qarmin/krokiet-czkawka-12-0-6fa09c43c3b9
+- Polish article - https://medium.com/@qarmin/krokiet-czkawka-12-0-c5dad2116793
 
 ## Usage, installation, compilation, requirements, license
 
@@ -85,41 +85,42 @@ Each tool uses different technologies, so you can find instructions for each of 
 In this comparison remember, that even if app have same features they may work different(e.g. one app may have more
 options to choose than other).
 
-|                           |   Krokiet   |     Czkawka      | Cedinia | FSlint |     DupeGuru      |  Bleachbit  |
-|:-------------------------:|:-----------:|:----------------:|:-------:|:------:|:-----------------:|:-----------:|
-|         Language          |    Rust     |       Rust       |  Rust   | Python |   Python/Obj-C    |   Python    |
-|  Framework base language  |    Rust     |        C         |  Rust   |   C    | C/C++/Obj-C/Swift |      C      |
-|         Framework         |    Slint    |      GTK 4       |  Slint  | PyGTK2 | Qt 5 (PyQt)/Cocoa |   PyGTK3    |
-|            OS             | Lin,Mac,Win |   Lin,Mac,Win    | Android |  Lin   |    Lin,Mac,Win    | Lin,Mac,Win |
-|     Duplicate finder      |      ✔      |        ✔         |    ✔    |   ✔    |         ✔         |             |
-|        Empty files        |      ✔      |        ✔         |    ✔    |   ✔    |                   |             |
-|       Empty folders       |      ✔      |        ✔         |    ✔    |   ✔    |                   |             |
-|      Temporary files      |      ✔      |        ✔         |    ✔    |   ✔    |                   |      ✔      |
-|         Big files         |      ✔      |        ✔         |    ✔    |        |                   |             |
-|      Similar images       |      ✔      |        ✔         |    ✔    |        |         ✔         |             |
-|      Similar videos       |      ✔      |        ✔         |         |        |                   |             |
-|  Music duplicates(tags)   |      ✔      |        ✔         |    ✔    |        |         ✔         |             |
-| Music duplicates(content) |      ✔      |        ✔         |    ✔    |        |                   |             |
-|     Invalid symlinks      |      ✔      |        ✔         |         |   ✔    |                   |             |
-|       Broken files        |      ✔      |        ✔         |    ✔    |        |                   |             |
-| Invalid names/extensions  |      ✔      |        ✔         |    ✔    |   ✔    |                   |             |
-|       Exif cleaner        |      ✔      |                  |    ✔    |        |                   |             |
-|      Video optimizer      |      ✔      |                  |         |        |                   |             |
-|         Bad Names         |      ✔      |                  |    ✔    |        |                   |             |
-|      Names conflict       |             |                  |         |   ✔    |                   |             |
-|    Installed packages     |             |                  |         |   ✔    |                   |             |
-|          Bad ID           |             |                  |         |   ✔    |                   |             |
-|   Non stripped binaries   |             |                  |         |   ✔    |                   |             |
-|   Redundant whitespace    |             |                  |         |   ✔    |                   |             |
-|     Overwriting files     |             |                  |         |   ✔    |                   |      ✔      |
-|     Portable version      |      ✔      |        ✔         |         |        |                   |      ✔      |
-|    Multiple languages     |      ✔      |        ✔         |    ✔    |   ✔    |         ✔         |      ✔      |
-|       Cache support       |      ✔      |        ✔         |    ✔    |        |         ✔         |             |
-|   In active development   |     Yes     | Yes<sup>**</sup> | Yes***  |   No   |  No<sup>*</sup>   |     Yes     |
+|                           |   Krokiet   |   Czkawka   | Cedinia | FSlint |     DupeGuru      |  Bleachbit  |
+|:-------------------------:|:-----------:|:-----------:|:-------:|:------:|:-----------------:|:-----------:|
+|         Language          |    Rust     |    Rust     |  Rust   | Python |   Python/Obj-C    |   Python    |
+|  Framework base language  |    Rust     |      C      |  Rust   |   C    | C/C++/Obj-C/Swift |      C      |
+|         Framework         |    Slint    |    GTK 4    |  Slint  | PyGTK2 | Qt 5 (PyQt)/Cocoa |   PyGTK3    |
+|            OS             | Lin,Mac,Win | Lin,Mac,Win | Android |  Lin   |    Lin,Mac,Win    | Lin,Mac,Win |
+|     Duplicate finder      |      ✔      |      ✔      |    ✔    |   ✔    |         ✔         |             |
+|        Empty files        |      ✔      |      ✔      |    ✔    |   ✔    |                   |             |
+|       Empty folders       |      ✔      |      ✔      |    ✔    |   ✔    |                   |             |
+|      Temporary files      |      ✔      |      ✔      |    ✔    |   ✔    |                   |      ✔      |
+|         Big files         |      ✔      |      ✔      |    ✔    |        |                   |             |
+|      Similar images       |      ✔      |      ✔      |    ✔    |        |         ✔         |             |
+|   Similar videos(audio)   |      ✔      |      ✔      |    ✔    |        |                   |             |
+|  Similar videos(frames)   |      ✔      |      ✔      |         |        |                   |             |
+|  Music duplicates(tags)   |      ✔      |      ✔      |    ✔    |        |         ✔         |             |
+| Music duplicates(content) |      ✔      |      ✔      |    ✔    |        |                   |             |
+|     Invalid symlinks      |      ✔      |      ✔      |         |   ✔    |                   |             |
+|       Broken files        |      ✔      |      ✔      |    ✔    |        |                   |             |
+| Invalid names/extensions  |      ✔      |      ✔      |    ✔    |   ✔    |                   |             |
+|       Exif cleaner        |      ✔      |             |    ✔    |        |                   |             |
+|      Video optimizer      |      ✔      |             |         |        |                   |             |
+|         Bad Names         |      ✔      |             |    ✔    |        |                   |             |
+|      Names conflict       |             |             |         |   ✔    |                   |             |
+|    Installed packages     |             |             |         |   ✔    |                   |             |
+|          Bad ID           |             |             |         |   ✔    |                   |             |
+|   Non stripped binaries   |             |             |         |   ✔    |                   |             |
+|   Redundant whitespace    |             |             |         |   ✔    |                   |             |
+|     Overwriting files     |             |             |         |   ✔    |                   |      ✔      |
+|     Portable version      |      ✔      |      ✔      |         |        |                   |      ✔      |
+|    Multiple languages     |      ✔      |      ✔      |    ✔    |   ✔    |         ✔         |      ✔      |
+|       Cache support       |      ✔      |      ✔      |    ✔    |        |         ✔         |             |
+|   In active development   |     Yes     |    No**     | Yes***  |   No   |  No<sup>*</sup>   |     Yes     |
 
 <p><sup>*</sup> Few small commits added recently and last version released in 2023</p> 
-<p><sup>**</sup> Czkawka GTK 12.0 is the last released version - no new binaries will be provided; migrate to Krokiet</p>
-<p><sup>***</sup> Cedinia is an experimental android app, video tools are not available due missing ffmpeg in Android</p>
+<p><sup>**</sup> Czkawka GTK 12.0 was the last released version - no new binaries will be provided</p>
+<p><sup>***</sup> Cedinia is an android app, video tools are not available due missing ffmpeg in Android</p>
 
 ## Other apps
 
