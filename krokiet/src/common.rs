@@ -730,6 +730,7 @@ impl ActiveTab {
             ToolType::TemporaryFiles => Self::TemporaryFiles,
             ToolType::ExifRemover => Self::ExifRemover,
             ToolType::VideoOptimizer => Self::VideoOptimizer,
+            ToolType::ImageOptimizer => Self::ImageOptimizer,
             ToolType::None => panic!("CLI tool parsing never produces ToolType::None"),
         }
     }
