@@ -54,3 +54,13 @@ cedinia/ui/fonts
 tmp/
 test/
 temp/
+
+# Binaries / build artifacts accidentally dropped at the repo root
+*.exe
+*.dll
+*.so
+*.dylib
+*.pdb
+*.com
+*.msi
+*.bin
