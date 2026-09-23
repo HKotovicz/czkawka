@@ -4,14 +4,13 @@ mod encoding;
 mod tests;
 pub mod traits;
 
-pub use self::encoding::{HardwareEncoder, NoiseReductionMethod, VideoCodec};
-
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
+pub use self::encoding::{HardwareEncoder, NoiseReductionMethod, VideoCodec};
 use crate::common::model::FileEntry;
 use crate::common::tool_data::CommonToolData;
 use crate::common::traits::ResultEntry;

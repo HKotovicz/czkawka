@@ -106,7 +106,11 @@ fn run_standard_command(params: &VideoTranscodeFixParams, video_path: &str, temp
     // The user may request a different GPU for decoding vs encoding.
     // Example: CUDA decode on an NVIDIA RTX 3060 (which does not support AV1
     // encode) + AMF encode on an AMD iGPU (which does support AV1 encode).
-    let decode_hw = if params.hardware_decoder != HardwareEncoder::None { params.hardware_decoder } else { hw };
+    let decode_hw = if params.hardware_decoder != HardwareEncoder::None {
+        params.hardware_decoder
+    } else {
+        hw
+    };
     let cross_gpu = params.hardware_decoder != HardwareEncoder::None && params.hardware_decoder != hw;
 
     // VAAPI requires the render device to be declared before the input file.

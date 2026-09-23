@@ -21,10 +21,10 @@ use log::error;
 
 use crate::parsers::{
     parse_audio_length_ratio, parse_audio_maximum_difference, parse_audio_similarity_percent, parse_broken_files, parse_checking_method_duplicate,
-    parse_checking_method_same_music, parse_crop_mechanism, parse_delete_method, parse_duration_tolerance_pct, parse_geometric_invariance, parse_hash_type, parse_image_hash_size,
-    parse_match_fraction, parse_max_samples, parse_maximal_file_size, parse_maximum_difference, parse_min_crop_size, parse_minimal_file_size, parse_minimum_segment_duration,
-    parse_music_duplicate_type, parse_noise_reduction, parse_scan_duration, parse_similar_hash_algorithm, parse_similar_image_filter, parse_skip_forward_amount, parse_tolerance,
-    parse_hardware_encoder, parse_video_codec, parse_window_count,
+    parse_checking_method_same_music, parse_crop_mechanism, parse_delete_method, parse_duration_tolerance_pct, parse_geometric_invariance, parse_hardware_encoder, parse_hash_type,
+    parse_image_hash_size, parse_match_fraction, parse_max_samples, parse_maximal_file_size, parse_maximum_difference, parse_min_crop_size, parse_minimal_file_size,
+    parse_minimum_segment_duration, parse_music_duplicate_type, parse_noise_reduction, parse_scan_duration, parse_similar_hash_algorithm, parse_similar_image_filter,
+    parse_skip_forward_amount, parse_tolerance, parse_video_codec, parse_window_count,
 };
 
 #[cfg(not(feature = "no_colors"))]
@@ -1208,7 +1208,6 @@ pub fn validate_file_sizes(minimal: u64, maximal: u64) {
         error!("WARNING: Maximum file size ({maximal}) is smaller than minimum file size ({minimal}), no files will match.");
     }
 }
-
 
 const HELP_TEMPLATE: &str = r#"
 {bin} {version}

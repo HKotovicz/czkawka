@@ -28,8 +28,7 @@ use czkawka_core::tools::similar_images::{SimilarImages, SimilarImagesParameters
 use czkawka_core::tools::similar_videos::{SimilarVideos, SimilarVideosParameters};
 use czkawka_core::tools::temporary::{Temporary, TemporaryParameters};
 use czkawka_core::tools::video_optimizer::{
-    VideoCropFixParams, VideoCropParams, VideoCroppingMechanism, VideoOptimizer, VideoOptimizerFixParams, VideoOptimizerParameters, VideoTranscodeFixParams,
-    VideoTranscodeParams,
+    VideoCropFixParams, VideoCropParams, VideoCroppingMechanism, VideoOptimizer, VideoOptimizerFixParams, VideoOptimizerParameters, VideoTranscodeFixParams, VideoTranscodeParams,
 };
 use log::{debug, error, info};
 
